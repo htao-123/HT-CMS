@@ -11,6 +11,12 @@
     "binding": "ASSETS"
   },
   "keep_vars": true,
+  "vars": {
+    "GITHUB_CLIENT_ID": "Ov23li9fmObEXoJFCF5r",
+    "NEXT_PUBLIC_APP_URL": "https://ht-cms.hotan.workers.dev",
+    "PUBLIC_GITHUB_REPO": "htao-123/cms-content",
+    "PUBLIC_GITHUB_BRANCH": "main"
+  },
   "observability": {
     "enabled": true
   }
