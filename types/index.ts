@@ -36,12 +36,37 @@ export interface ResumeItem {
   subtitle: string;
   period: string;
   description: string;
+  location?: string;
+  highlights?: string[];
+  tags?: string[];
 }
 
 export interface Skill {
   id: string;
   category: string;
   items: string[];
+}
+
+export interface ResumeProject {
+  id: string;
+  sourceType: "linked" | "custom";
+  projectId?: string;
+  title: string;
+  role?: string;
+  period?: string;
+  description: string;
+  highlights: string[];
+  tags: string[];
+  link?: string;
+  showLink?: boolean;
+}
+
+export interface ResumeData {
+  summary: string;
+  experience: ResumeItem[];
+  projects: ResumeProject[];
+  education: ResumeItem[];
+  skills: Skill[];
 }
 
 export interface UserProfile {
@@ -54,10 +79,5 @@ export interface UserProfile {
     github?: string;
     twitter?: string;
     linkedin?: string;
-  };
-  resume: {
-    experience: ResumeItem[];
-    education: ResumeItem[];
-    skills: Skill[];
   };
 }

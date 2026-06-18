@@ -12,7 +12,7 @@ import { Github, LayoutDashboard, FolderKanban, FileText, User, LogOut, Settings
 import Link from "next/link";
 
 export default function AdminPage() {
-  const { isAuthenticated, githubUser, loginWithGithub, logout, isLoading, syncProjects, syncBlogs, syncProfile } = useData();
+  const { isAuthenticated, githubUser, loginWithGithub, logout, isLoading, syncProjects, syncBlogs, syncProfile, syncResume } = useData();
 
   // Auto-fetch data when switching tabs
   const handleTabChange = (value: string) => {
@@ -23,6 +23,7 @@ export default function AdminPage() {
         syncBlogs();
       } else if (value === "profile") {
         syncProfile();
+        syncResume();
       }
     }
   };

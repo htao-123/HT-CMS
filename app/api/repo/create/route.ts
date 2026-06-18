@@ -50,8 +50,11 @@ export async function POST(request: Request) {
       try {
         const error = JSON.parse(errorText);
         if (error.message) errorMsg = error.message;
-        if (error.errors) {
-          errorMsg = error.errors.map((e: any) => e.message).join(", ");
+        if (Array.isArray(error.errors)) {
+          errorMsg = error.errors
+            .map((e: { message?: string }) => e.message)
+            .filter(Boolean)
+            .join(", ");
         }
       } catch {
         errorMsg = errorText || errorMsg;

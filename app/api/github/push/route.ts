@@ -19,11 +19,6 @@ interface ProfileContent {
     twitter?: string;
     linkedin?: string;
   };
-  resume: {
-    experience?: Array<Record<string, unknown>>;
-    education?: Array<Record<string, unknown>>;
-    skills?: string[];
-  };
 }
 
 interface ProjectContent {
@@ -197,9 +192,6 @@ export async function PUT(request: Request): Promise<NextResponse<{ success?: bo
         github: profileContent.socials?.github,
         twitter: profileContent.socials?.twitter,
         linkedin: profileContent.socials?.linkedin,
-        experience: profileContent.resume?.experience || [],
-        education: profileContent.resume?.education || [],
-        skills: profileContent.resume?.skills || [],
       });
       fileContent += "\n"; // Empty content section after frontmatter
     } else if (type === "project") {

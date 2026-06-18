@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -30,6 +30,81 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
 }
+
+const toolbarButtons = [
+  {
+    icon: Heading1,
+    title: "一级标题",
+    before: "# ",
+  },
+  {
+    icon: Heading2,
+    title: "二级标题",
+    before: "## ",
+  },
+  {
+    icon: Bold,
+    title: "粗体",
+    before: "**",
+    after: "**",
+    placeholder: "粗体文本",
+  },
+  {
+    icon: Italic,
+    title: "斜体",
+    before: "*",
+    after: "*",
+    placeholder: "斜体文本",
+  },
+  {
+    icon: Type,
+    title: "行内代码",
+    before: "`",
+    after: "`",
+    placeholder: "代码",
+  },
+  {
+    icon: Code,
+    title: "代码块",
+    before: "```\n",
+    after: "\n```",
+    placeholder: "代码",
+  },
+  {
+    icon: Quote,
+    title: "引用",
+    before: "> ",
+  },
+  {
+    icon: List,
+    title: "无序列表",
+    before: "- ",
+  },
+  {
+    icon: ListOrdered,
+    title: "有序列表",
+    before: "1. ",
+  },
+  {
+    icon: LinkIcon,
+    title: "链接",
+    before: "[",
+    after: "](url)",
+    placeholder: "链接文本",
+  },
+  {
+    icon: ImageIcon,
+    title: "图片",
+    before: "![",
+    after: "](url)",
+    placeholder: "图片描述",
+  },
+  {
+    icon: Minus,
+    title: "分割线",
+    before: "\n---\n",
+  },
+] as const;
 
 export function MarkdownEditor({
   value,
@@ -77,69 +152,6 @@ export function MarkdownEditor({
     preview.scrollTop = percentage * (preview.scrollHeight - preview.clientHeight);
   };
 
-  const toolbarButtons = [
-    {
-      icon: Heading1,
-      title: "一级标题",
-      action: () => insertText("# ", ""),
-    },
-    {
-      icon: Heading2,
-      title: "二级标题",
-      action: () => insertText("## ", ""),
-    },
-    {
-      icon: Bold,
-      title: "粗体",
-      action: () => insertText("**", "**", "粗体文本"),
-    },
-    {
-      icon: Italic,
-      title: "斜体",
-      action: () => insertText("*", "*", "斜体文本"),
-    },
-    {
-      icon: Type,
-      title: "行内代码",
-      action: () => insertText("`", "`", "代码"),
-    },
-    {
-      icon: Code,
-      title: "代码块",
-      action: () => insertText("```\n", "\n```", "代码"),
-    },
-    {
-      icon: Quote,
-      title: "引用",
-      action: () => insertText("> ", ""),
-    },
-    {
-      icon: List,
-      title: "无序列表",
-      action: () => insertText("- ", ""),
-    },
-    {
-      icon: ListOrdered,
-      title: "有序列表",
-      action: () => insertText("1. ", ""),
-    },
-    {
-      icon: LinkIcon,
-      title: "链接",
-      action: () => insertText("[", "](url)", "链接文本"),
-    },
-    {
-      icon: ImageIcon,
-      title: "图片",
-      action: () => insertText("![", "](url)", "图片描述"),
-    },
-    {
-      icon: Minus,
-      title: "分割线",
-      action: () => insertText("\n---\n", ""),
-    },
-  ];
-
   return (
     <div
       className={`border rounded-lg overflow-hidden bg-background w-full ${
@@ -156,7 +168,13 @@ export function MarkdownEditor({
               size="sm"
               className="h-7 w-7 p-0"
               title={btn.title}
-              onClick={btn.action}
+              onClick={() =>
+                insertText(
+                  btn.before,
+                  "after" in btn ? btn.after : "",
+                  "placeholder" in btn ? btn.placeholder : ""
+                )
+              }
             >
               <btn.icon className="h-4 w-4" />
             </Button>

@@ -18,11 +18,6 @@ interface Profile {
     twitter: string;
     linkedin: string;
   };
-  resume: {
-    experience: Array<{ role?: string; company?: string; description?: string; from?: string; to?: string }>;
-    education: Array<{ school?: string; degree?: string; field?: string; from?: string; to?: string }>;
-    skills: string[];
-  };
 }
 
 interface ProfileFrontmatter {
@@ -34,9 +29,6 @@ interface ProfileFrontmatter {
   github?: string;
   twitter?: string;
   linkedin?: string;
-  experience?: ProfileFrontmatter[];
-  education?: ProfileFrontmatter[];
-  skills?: string[];
 }
 
 // Cache configuration - revalidate every 5 minutes
@@ -106,11 +98,6 @@ export async function GET(): Promise<NextResponse<{ profile?: Profile | null; er
         twitter: frontmatter.twitter || "",
         linkedin: frontmatter.linkedin || "",
       },
-      resume: {
-        experience: (frontmatter.experience as any) || [],
-        education: (frontmatter.education as any) || [],
-        skills: frontmatter.skills || [],
-      },
     };
 
     return NextResponse.json({ profile });
@@ -135,7 +122,7 @@ function parseFrontmatter(content: string): ProfileFrontmatter {
     const colonIndex = line.indexOf(":");
     if (colonIndex > 0) {
       const key = line.slice(0, colonIndex).trim();
-      let value: any = line.slice(colonIndex + 1).trim();
+      let value = line.slice(colonIndex + 1).trim();
 
       // Strip quotes from string values
       if ((value.startsWith('"') && value.endsWith('"')) ||
@@ -143,20 +130,18 @@ function parseFrontmatter(content: string): ProfileFrontmatter {
         value = value.slice(1, -1);
       }
 
-      // Parse arrays
-      if (value.startsWith("[") && value.endsWith("]")) {
-        value = value
-          .slice(1, -1)
-          .split(",")
-          .map((v: string) => v.trim().replace(/"/g, ""))
-          .filter(Boolean);
-      } else if (value === "true") {
-        value = true;
-      } else if (value === "false") {
-        value = false;
+      if (
+        key === "name" ||
+        key === "title" ||
+        key === "bio" ||
+        key === "email" ||
+        key === "avatarUrl" ||
+        key === "github" ||
+        key === "twitter" ||
+        key === "linkedin"
+      ) {
+        frontmatter[key] = value;
       }
-
-      (frontmatter as any)[key] = value;
     }
   }
 

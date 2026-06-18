@@ -63,14 +63,7 @@ export function TabsList({ className, children }: TabsListProps) {
         className
       )}
     >
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child, {
-            ...(child.props || {}),
-          } as any);
-        }
-        return child;
-      })}
+      {children}
     </div>
   );
 }

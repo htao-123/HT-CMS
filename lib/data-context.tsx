@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import type { Project, BlogPost, UserProfile } from "@/types";
+import type { Project, BlogPost, ResumeData, UserProfile } from "@/types";
 
 interface GitHubUser {
   login: string;
@@ -19,7 +19,12 @@ interface DataContextType {
   profile: UserProfile;
   updateProfile: (profile: UserProfile) => void;
   syncProfile: () => Promise<boolean>;
-  pushProfile: () => Promise<boolean>;
+  pushProfile: (profile?: UserProfile) => Promise<boolean>;
+
+  resume: ResumeData;
+  updateResume: (resume: ResumeData) => void;
+  syncResume: () => Promise<boolean>;
+  pushResume: (resume?: ResumeData) => Promise<boolean>;
 
   projects: Project[];
   addProject: (project: Project) => void;
@@ -68,11 +73,14 @@ const defaultProfile: UserProfile = {
     twitter: "",
     linkedin: "",
   },
-  resume: {
-    experience: [],
-    education: [],
-    skills: [],
-  },
+};
+
+const defaultResume: ResumeData = {
+  summary: "",
+  experience: [],
+  projects: [],
+  education: [],
+  skills: [],
 };
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
@@ -83,6 +91,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize with empty data
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const [resume, setResume] = useState<ResumeData>(defaultResume);
   const [projects, setProjects] = useState<Project[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [blogCollections, setBlogCollections] = useState<Collection[]>([]);
@@ -111,6 +120,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (config.repo) {
           await Promise.all([
             syncProfileInternal(),
+            syncResumeInternal(),
             syncProjectsInternal(),
             syncBlogsInternal(),
             fetchCollections("blogs"),
@@ -151,7 +161,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         if (data.profile) {
-          setProfile(data.profile);
+          const nextProfile = {
+            ...defaultProfile,
+            ...data.profile,
+            socials: {
+              ...defaultProfile.socials,
+              ...(data.profile.socials || {}),
+            },
+          };
+          setProfile(nextProfile);
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  const syncResumeInternal = async (): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/github/resume");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.resume) {
+          setResume({
+            ...defaultResume,
+            ...data.resume,
+          });
           return true;
         }
       }
@@ -203,6 +240,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const syncResume = async (): Promise<boolean> => {
+    setIsSyncing(true);
+    try {
+      const result = await syncResumeInternal();
+      return result;
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const syncProjects = async (): Promise<boolean> => {
     setIsSyncing(true);
     try {
@@ -226,6 +273,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Profile actions
   const updateProfile = (newProfile: UserProfile) => {
     setProfile(newProfile);
+  };
+
+  const updateResume = (newResume: ResumeData) => {
+    setResume(newResume);
   };
 
   // Project CRUD - now only for UI state, actual data comes from GitHub
@@ -327,7 +378,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Push to GitHub
-  const pushProfile = async (): Promise<boolean> => {
+  const pushProfile = async (profileToPush = profile): Promise<boolean> => {
     setIsPushing(true);
     try {
       const res = await fetch("/api/github/push", {
@@ -336,8 +387,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           type: "profile",
           id: "profile",
-          content: profile,
+          content: profileToPush,
         }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
+  const pushResume = async (resumeToPush = resume): Promise<boolean> => {
+    setIsPushing(true);
+    try {
+      const res = await fetch("/api/github/resume", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume: resumeToPush }),
       });
       return res.ok;
     } catch {
@@ -470,6 +537,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         syncProfile,
         pushProfile,
+        resume,
+        updateResume,
+        syncResume,
+        pushResume,
         projects,
         addProject,
         updateProject,
