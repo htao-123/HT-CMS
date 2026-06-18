@@ -10,6 +10,7 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "keep_vars": true,
   "observability": {
     "enabled": true
   }
