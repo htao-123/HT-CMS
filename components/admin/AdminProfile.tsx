@@ -49,48 +49,160 @@ function summarizeProjectContent(content: string) {
   return clean.slice(0, 120);
 }
 
+function uniq(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function normalizeTechName(value: string) {
+  const aliases: Record<string, string> = {
+    dart: "Dart",
+    flutter: "Flutter",
+    kotlin: "Kotlin",
+    swift: "Swift",
+    rust: "Rust",
+    python: "Python",
+    react: "React",
+    nextjs: "Next.js",
+    "next.js": "Next.js",
+    typescript: "TypeScript",
+    javascript: "JavaScript",
+    fastapi: "FastAPI",
+    node: "Node.js",
+    "node.js": "Node.js",
+  };
+  return aliases[value.toLowerCase()] || value;
+}
+
+function inferProjectFocus(tags: string[]) {
+  const lowerTags = tags.map((tag) => tag.toLowerCase());
+  if (lowerTags.some((tag) => ["dart", "flutter", "kotlin", "swift"].includes(tag))) {
+    return "跨端应用";
+  }
+  if (lowerTags.some((tag) => ["react", "next.js", "nextjs", "vue"].includes(tag))) {
+    return "前端应用";
+  }
+  if (lowerTags.some((tag) => ["python", "fastapi", "node", "node.js", "express"].includes(tag))) {
+    return "后端服务";
+  }
+  if (lowerTags.some((tag) => ["rust", "c++", "c"].includes(tag))) {
+    return "基础能力";
+  }
+  return "产品功能";
+}
+
+function groupSkills(tags: string[]): Skill[] {
+  const normalizedTags = uniq(tags.map(normalizeTechName));
+  const groups = [
+    {
+      id: "skill-client",
+      category: "客户端与跨端开发",
+      match: ["Dart", "Flutter", "Kotlin", "Swift", "C++", "CMake", "Objective-C"],
+    },
+    {
+      id: "skill-frontend",
+      category: "前端开发",
+      match: ["React", "Vue", "Next.js", "TypeScript", "JavaScript", "Tailwind CSS"],
+    },
+    {
+      id: "skill-backend",
+      category: "后端与工程化",
+      match: ["Python", "FastAPI", "Node.js", "Express", "Rust", "Shell"],
+    },
+  ];
+
+  const skillGroups = groups
+    .map((group) => ({
+      id: group.id,
+      category: group.category,
+      items: normalizedTags.filter((tag) => group.match.includes(tag)).slice(0, 8),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  const used = new Set(skillGroups.flatMap((group) => group.items));
+  const others = normalizedTags.filter((tag) => !used.has(tag)).slice(0, 8);
+  if (others.length > 0) {
+    skillGroups.push({ id: "skill-other", category: "其他技术", items: others });
+  }
+
+  return skillGroups;
+}
+
+function cleanResume(resume: ResumeData): ResumeData {
+  const hasItemContent = (item: ResumeItem) => Boolean(
+    item.title.trim() ||
+    item.subtitle.trim() ||
+    item.period.trim() ||
+    item.description.trim() ||
+    item.location?.trim() ||
+    item.highlights?.some((highlight) => highlight.trim()) ||
+    item.tags?.some((tag) => tag.trim())
+  );
+  const hasProjectContent = (project: ResumeProject) => Boolean(
+    project.title.trim() ||
+    project.role?.trim() ||
+    project.period?.trim() ||
+    project.description.trim() ||
+    project.highlights.some((highlight) => highlight.trim()) ||
+    project.tags.some((tag) => tag.trim())
+  );
+
+  return {
+    summary: resume.summary.trim(),
+    experience: resume.experience.filter(hasItemContent),
+    projects: resume.projects.filter(hasProjectContent).map((project) => ({
+      ...project,
+      highlights: uniq(project.highlights),
+      tags: uniq(project.tags.map(normalizeTechName)),
+    })),
+    education: resume.education.filter(hasItemContent),
+    skills: resume.skills
+      .map((skill) => ({ ...skill, items: uniq(skill.items.map(normalizeTechName)) }))
+      .filter((skill) => skill.category.trim() && skill.items.length > 0),
+  };
+}
+
 function buildBasicResumeDraft(
   targetRole: string,
   profileBio: string,
   selectedProjects: ReturnType<typeof useData>["projects"]
 ): Pick<ResumeData, "summary" | "projects" | "skills"> {
   const allTags = selectedProjects.flatMap((project) => project.tags || []);
-  const uniqueTags = Array.from(new Set(allTags.map((tag) => tag.trim()).filter(Boolean)));
+  const uniqueTags = uniq(allTags.map(normalizeTechName));
   const projectTitles = selectedProjects.map((project) => project.title).filter(Boolean);
+  const role = targetRole.trim() || "软件工程师";
 
   const summaryParts = [
-    profileBio,
-    targetRole ? `目标方向：${targetRole}。` : "",
-    projectTitles.length ? `具备 ${projectTitles.slice(0, 3).join("、")} 等项目经验。` : "",
-    uniqueTags.length ? `技术栈覆盖 ${uniqueTags.slice(0, 8).join("、")}。` : "",
+    profileBio ? `${profileBio}。` : "",
+    `目标方向为${role}，具备从需求拆解、功能实现到部署交付的完整项目经验。`,
+    projectTitles.length ? `代表项目包括 ${projectTitles.slice(0, 3).join("、")}。` : "",
+    uniqueTags.length ? `熟悉 ${uniqueTags.slice(0, 8).join("、")} 等技术栈。` : "",
   ].filter(Boolean);
 
   return {
     summary: summaryParts.join(""),
     projects: selectedProjects.map((project): ResumeProject => {
-      const tags = project.tags || [];
+      const tags = uniq((project.tags || []).map(normalizeTechName));
       const contentSummary = summarizeProjectContent(project.content || "");
+      const focus = inferProjectFocus(tags);
       return {
         id: `resume-${project.id}`,
         sourceType: "linked",
         projectId: project.id,
         title: project.title,
-        role: targetRole || "",
+        role,
         period: "",
         description: project.description || contentSummary,
         highlights: [
-          project.description ? `负责 ${project.title} 的功能设计与实现，围绕业务目标完成核心能力建设。` : "",
-          tags.length ? `使用 ${tags.slice(0, 6).join("、")} 等技术完成项目开发与迭代。` : "",
-          contentSummary ? contentSummary : "",
+          `围绕${project.description || project.title}拆解核心使用场景，完成${focus}的功能设计、开发与体验打磨。`,
+          tags.length ? `基于 ${tags.slice(0, 6).join("、")} 构建主要能力，覆盖界面交互、数据处理和多端适配等环节。` : "",
+          contentSummary ? `结合项目文档沉淀实现细节，保证功能可维护、可迭代。` : "负责项目从方案到落地的实现，关注可维护性与实际使用体验。",
         ].filter(Boolean).slice(0, 3),
         tags,
         link: getProjectLink(project),
         showLink: true,
       };
     }),
-    skills: uniqueTags.length
-      ? [{ id: "skill-tech-stack", category: "技术栈", items: uniqueTags.slice(0, 12) }]
-      : [],
+    skills: groupSkills(uniqueTags),
   };
 }
 
@@ -262,11 +374,12 @@ export function AdminProfile() {
 
   const handleSave = async () => {
     updateProfile(profileForm);
-    updateResume(resumeForm);
+    const cleanedResume = cleanResume(resumeForm);
+    updateResume(cleanedResume);
     setSaveMessage("保存中...");
 
     const profileOk = await pushProfile(profileForm);
-    const resumeOk = await pushResume(resumeForm);
+    const resumeOk = await pushResume(cleanedResume);
     setSaveMessage(profileOk && resumeOk ? "已保存到 GitHub" : "保存失败，请稍后重试");
   };
 
@@ -277,6 +390,7 @@ export function AdminProfile() {
       <Button type="button" variant="ghost" size="sm" onClick={onDelete} title="删除"><Trash2 className="h-4 w-4" /></Button>
     </div>
   );
+  const previewResume = cleanResume(resumeForm);
 
   return (
     <div className="space-y-6">
@@ -518,10 +632,10 @@ export function AdminProfile() {
                 <div><h3 className="text-3xl font-bold">{profileForm.name || "姓名"}</h3><p className="text-muted-foreground">{profileForm.title || "职位"}</p></div>
                 <p className="text-sm text-muted-foreground">{profileForm.email}</p>
               </div>
-              <PreviewSection title="简介"><p className="text-sm leading-7 text-muted-foreground">{resumeForm.summary || profileForm.bio || "暂无简介"}</p></PreviewSection>
-              <PreviewSection title="工作经历">{resumeForm.experience.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}</PreviewSection>
-              <PreviewSection title="项目经历">{resumeForm.projects.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.role} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}</PreviewSection>
-              <PreviewSection title="教育背景">{resumeForm.education.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} />)}</PreviewSection>
+              <PreviewSection title="简介"><p className="text-sm leading-7 text-muted-foreground">{previewResume.summary || profileForm.bio || "暂无简介"}</p></PreviewSection>
+              <PreviewSection title="工作经历">{previewResume.experience.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}</PreviewSection>
+              <PreviewSection title="项目经历">{previewResume.projects.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.role} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}</PreviewSection>
+              <PreviewSection title="教育背景">{previewResume.education.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} />)}</PreviewSection>
             </CardContent>
           </Card>
         </TabsContent>

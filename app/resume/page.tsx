@@ -9,6 +9,10 @@ import type { ResumeItem, ResumeProject } from "@/types";
 
 export default function ResumePage() {
   const { profile, resume } = useData();
+  const visibleExperience = resume.experience.filter(hasResumeItemContent);
+  const visibleProjects = resume.projects.filter(hasResumeProjectContent);
+  const visibleEducation = resume.education.filter(hasResumeItemContent);
+  const visibleSkills = resume.skills.filter((skill) => skill.category.trim() && skill.items.some((item) => item.trim()));
 
   return (
     <div className="container min-h-screen px-4 py-10 print:py-0">
@@ -59,25 +63,25 @@ export default function ResumePage() {
           </section>
         )}
 
-        <ResumeSection title="工作经历" empty={!resume.experience.length}>
-          {resume.experience.map((item) => (
+        <ResumeSection title="工作经历" empty={!visibleExperience.length}>
+          {visibleExperience.map((item) => (
             <ResumeTimelineItem key={item.id} item={item} />
           ))}
         </ResumeSection>
 
-        <ResumeSection title="项目经历" empty={!resume.projects.length}>
-          {resume.projects.map((project) => (
+        <ResumeSection title="项目经历" empty={!visibleProjects.length}>
+          {visibleProjects.map((project) => (
             <ProjectItem key={project.id} project={project} />
           ))}
         </ResumeSection>
 
-        <ResumeSection title="技能特长" empty={!resume.skills.length}>
+        <ResumeSection title="技能特长" empty={!visibleSkills.length}>
           <div className="grid gap-4 md:grid-cols-2 print:grid-cols-2 print:gap-3">
-            {resume.skills.map((skillGroup) => (
+            {visibleSkills.map((skillGroup) => (
               <div key={skillGroup.id} className="rounded-lg border p-5 print:border-0 print:p-0">
                 <h3 className="mb-3 font-semibold">{skillGroup.category}</h3>
                 <div className="flex flex-wrap gap-2">
-                  {skillGroup.items.map((skill) => (
+                  {skillGroup.items.filter((skill) => skill.trim()).map((skill) => (
                     <Badge key={skill} variant="secondary" className="print:border print:bg-transparent">
                       {skill}
                     </Badge>
@@ -88,13 +92,36 @@ export default function ResumePage() {
           </div>
         </ResumeSection>
 
-        <ResumeSection title="教育背景" empty={!resume.education.length}>
-          {resume.education.map((item) => (
+        <ResumeSection title="教育背景" empty={!visibleEducation.length}>
+          {visibleEducation.map((item) => (
             <ResumeTimelineItem key={item.id} item={item} />
           ))}
         </ResumeSection>
       </div>
     </div>
+  );
+}
+
+function hasResumeItemContent(item: ResumeItem) {
+  return Boolean(
+    item.title.trim() ||
+    item.subtitle.trim() ||
+    item.period.trim() ||
+    item.description.trim() ||
+    item.location?.trim() ||
+    item.highlights?.some((highlight) => highlight.trim()) ||
+    item.tags?.some((tag) => tag.trim())
+  );
+}
+
+function hasResumeProjectContent(project: ResumeProject) {
+  return Boolean(
+    project.title.trim() ||
+    project.role?.trim() ||
+    project.period?.trim() ||
+    project.description.trim() ||
+    project.highlights.some((highlight) => highlight.trim()) ||
+    project.tags.some((tag) => tag.trim())
   );
 }
 

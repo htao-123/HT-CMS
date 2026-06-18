@@ -33,7 +33,7 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
     const body = (await request.json()) as ResumeGenerateRequest;
     const targetRole = body.targetRole?.trim() || "软件工程师";
     const profile = body.profile;
-    const projects = (body.projects || []).slice(0, 8);
+    const projects = (body.projects || []).slice(0, 5);
 
     if (projects.length === 0) {
       return NextResponse.json({ error: "请至少选择一个项目" }, { status: 400 });
@@ -51,12 +51,12 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
         messages: [
           {
             role: "system",
-            content: "你是资深中文技术简历顾问。只返回合法 JSON，不要 Markdown，不要解释。",
+            content: "你是资深中文技术简历顾问，擅长把个人项目改写成能投递的技术简历。只返回合法 JSON，不要 Markdown，不要解释。",
           },
           { role: "user", content: prompt },
         ],
-        temperature: 0.4,
-        max_tokens: 2200,
+        temperature: 0.25,
+        max_tokens: 2600,
       }),
     });
 
@@ -111,12 +111,15 @@ ${JSON.stringify({
 ${JSON.stringify(projectPayload, null, 2)}
 
 要求：
-1. summary 写 80-140 字，面向目标岗位，避免空话。
-2. projects 必须基于候选项目，不要编造项目；每个项目生成 description 和 2-4 条 highlights。
-3. highlights 强调职责、技术实现、结果或价值；如果资料没有明确数字，不要编造量化结果。
-4. skills 从项目 tags 和内容中归纳 2-4 个技能分组，每组 3-8 项。
-5. role 可以根据目标岗位填写，如“前端开发 / 全栈开发 / AI 应用开发”；period 没有资料就返回空字符串。
-6. 只返回 JSON，结构必须是：
+1. 这是一份“求职简历”，不是项目介绍页。语言要像候选人的工作成果，避免“这是一个……项目”这种介绍腔。
+2. summary 写 90-150 字，结构为：目标岗位匹配度 + 核心技术栈 + 能独立完成的事情 + 代表项目。不要写“热爱学习”“积极主动”等空话。
+3. projects 必须基于候选项目，不要编造项目。description 写 35-70 字，说明项目定位、技术复杂度和个人负责范围。
+4. 每个项目 highlights 生成 3-4 条，每条 25-55 字，用“负责/设计/实现/封装/优化/接入/构建/沉淀”等动作开头，体现技术实现、工程化、跨端/数据/性能/部署/体验价值。
+5. 如果没有明确数据，不要编造百分比、用户量、耗时缩短等量化结果；可以写“提升维护性”“降低重复配置”“完善异常处理”等非虚构价值。
+6. skills 从项目 tags 和内容中归纳 3-4 个技能分组，每组 4-8 项，分组名要像简历：客户端开发、前端工程、后端与接口、工程化与工具链等。
+7. role 根据目标岗位和项目内容填写，如“跨端应用开发”“前端开发”“全栈开发”“AI 应用开发”；period 没有资料就返回空字符串。
+8. 不要输出空项目、空技能；不要把 README 原文直接复制到 highlights。
+9. 只返回 JSON，结构必须是：
 {
   "summary": "string",
   "projects": [
