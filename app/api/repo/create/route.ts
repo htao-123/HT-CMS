@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         Accept: "application/vnd.github.v3+json",
-        "User-Agent": "Voidnap-CMS",
+        "User-Agent": "HT-CMS",
         Authorization: `Bearer ${GITHUB_TOKEN}`,
       },
       body: JSON.stringify({

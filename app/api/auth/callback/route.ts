@@ -4,11 +4,20 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const state = searchParams.get("state");
+  const expectedState = request.cookies.get("voidnap_oauth_state")?.value;
 
   if (!code) {
     return NextResponse.redirect(
       new URL("/admin?error=no_code", request.url)
     );
+  }
+
+  if (!state || !expectedState || state !== expectedState) {
+    const response = NextResponse.redirect(
+      new URL("/admin?error=invalid_state", request.url)
+    );
+    response.cookies.delete("voidnap_oauth_state");
+    return response;
   }
 
   try {
@@ -52,7 +61,7 @@ export async function GET(request: NextRequest) {
     // Get user info
     const headers = new Headers();
     headers.append("Authorization", `Bearer ${tokenData.access_token}`);
-    headers.append("User-Agent", "Voidnap-CMS");
+    headers.append("User-Agent", "HT-CMS");
 
     const userResponse = await fetch("https://api.github.com/user", {
       headers,
@@ -82,12 +91,15 @@ export async function GET(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: "/",
     });
+    response.cookies.delete("voidnap_oauth_state");
 
     return response;
   } catch (error) {
     console.error("GitHub OAuth error:", error);
-    return NextResponse.redirect(
+    const response = NextResponse.redirect(
       new URL("/admin?error=oauth_failed", request.url)
     );
+    response.cookies.delete("voidnap_oauth_state");
+    return response;
   }
 }

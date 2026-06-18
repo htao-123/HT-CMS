@@ -1,4 +1,4 @@
-# Voidnap CMS
+# HT-CMS
 
 一款基于 GitHub 仓库的现代化个人网站内容管理系统，支持项目管理、博客发布和个人简历展示。
 
@@ -69,8 +69,8 @@ PUBLIC_GITHUB_BRANCH=main
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/yourusername/voidnap-cms.git
-cd voidnap-cms
+git clone https://github.com/htao-123/HT-CMS.git
+cd HT-CMS
 ```
 
 ### 2. 安装依赖
@@ -106,7 +106,7 @@ npm run dev
 ## 项目结构
 
 ```
-voidnap-cms/
+ht-cms/
 ├── app/                      # Next.js App Router 页面
 │   ├── admin/               # 管理后台
 │   │   ├── blogs/          # 博客管理

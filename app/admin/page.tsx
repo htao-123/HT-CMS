@@ -47,9 +47,9 @@ export default function AdminPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-              <img src="/logo-icon.svg" alt="Voidnap CMS" className="w-8 h-8" />
+              <img src="/logo-icon.svg" alt="HT-CMS" className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl font-bold font-display">Voidnap CMS</h1>
+            <h1 className="text-2xl font-bold font-display">HT-CMS</h1>
             <p className="text-muted-foreground mt-2">使用 GitHub 账号登录管理后台</p>
           </div>
 
@@ -92,11 +92,11 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
-                <img src="/logo-icon.svg" alt="Voidnap CMS" className="w-5 h-5" />
+                <img src="/logo-icon.svg" alt="HT-CMS" className="w-5 h-5" />
               </div>
               <div>
                 <h1 className="text-xl font-bold font-display">管理后台</h1>
-                <p className="text-xs text-muted-foreground">Voidnap CMS</p>
+                <p className="text-xs text-muted-foreground">HT-CMS</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

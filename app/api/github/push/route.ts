@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { encodeGitHubContentsPath } from "@/lib/github-path";
 
 // Types
 interface BlogConfig {
@@ -19,8 +20,8 @@ interface ProfileContent {
     linkedin?: string;
   };
   resume: {
-    experience?: Array<any>;
-    education?: Array<any>;
+    experience?: Array<Record<string, unknown>>;
+    education?: Array<Record<string, unknown>>;
     skills?: string[];
   };
 }
@@ -54,11 +55,11 @@ function toBase64(content: string): string {
 }
 
 // Helper to generate frontmatter
-function generateFrontmatter(data: Record<string, any>): string {
+function generateFrontmatter(data: Record<string, boolean | string | unknown[] | null | undefined>): string {
   let frontmatter = "---\n";
   for (const [key, value] of Object.entries(data)) {
     if (Array.isArray(value)) {
-      frontmatter += `${key}: [${value.map((v) => `"${v}"`).join(", ")}]\n`;
+      frontmatter += `${key}: [${value.map((v) => `"${String(v)}"`).join(", ")}]\n`;
     } else if (typeof value === "boolean") {
       frontmatter += `${key}: ${value}\n`;
     } else if (value && value !== "") {
@@ -69,7 +70,7 @@ function generateFrontmatter(data: Record<string, any>): string {
   return frontmatter;
 }
 
-export async function PUT(request: Request): Promise<NextResponse<{ success?: boolean; content?: any; error?: string }>> {
+export async function PUT(request: Request): Promise<NextResponse<{ success?: boolean; content?: unknown; error?: string }>> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("voidnap_session");
 
@@ -123,7 +124,7 @@ export async function PUT(request: Request): Promise<NextResponse<{ success?: bo
     // GitHub API headers
     const githubHeaders = {
       Accept: "application/vnd.github.v3+json",
-      "User-Agent": "Voidnap-CMS",
+      "User-Agent": "HT-CMS",
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       "Content-Type": "application/json",
     } as const;
@@ -156,7 +157,7 @@ export async function PUT(request: Request): Promise<NextResponse<{ success?: bo
 
       // Get old file SHA
       const oldFileCheckResponse = await fetch(
-        `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(oldFilePath)}?ref=${config.branch}`,
+        `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(oldFilePath)}?ref=${config.branch}`,
         {
           headers: githubHeaders,
         }
@@ -168,7 +169,7 @@ export async function PUT(request: Request): Promise<NextResponse<{ success?: bo
         const oldSha = oldFileData.sha;
 
         await fetch(
-          `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(oldFilePath)}`,
+          `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(oldFilePath)}`,
           {
             method: "DELETE",
             headers: githubHeaders,
@@ -228,7 +229,7 @@ export async function PUT(request: Request): Promise<NextResponse<{ success?: bo
 
     // Check if file exists first
     const checkResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(filePath)}?ref=${config.branch}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(filePath)}?ref=${config.branch}`,
       {
         headers: githubHeaders,
       }
@@ -256,7 +257,7 @@ export async function PUT(request: Request): Promise<NextResponse<{ success?: bo
         };
 
     const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(filePath)}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(filePath)}`,
       {
         method: "PUT",
         headers: githubHeaders,
@@ -339,7 +340,7 @@ export async function DELETE(request: Request): Promise<NextResponse<{ success?:
     // GitHub API headers
     const githubHeaders = {
       Accept: "application/vnd.github.v3+json",
-      "User-Agent": "Voidnap-CMS",
+      "User-Agent": "HT-CMS",
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       "Content-Type": "application/json",
     } as const;
@@ -356,7 +357,7 @@ export async function DELETE(request: Request): Promise<NextResponse<{ success?:
 
     // Get file SHA first
     const checkResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(filePath)}?ref=${config.branch}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(filePath)}?ref=${config.branch}`,
       {
         headers: githubHeaders,
       }
@@ -371,7 +372,7 @@ export async function DELETE(request: Request): Promise<NextResponse<{ success?:
 
     // Delete file
     const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(filePath)}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(filePath)}`,
       {
         method: "DELETE",
         headers: githubHeaders,

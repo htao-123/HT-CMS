@@ -76,7 +76,7 @@ export async function GET(): Promise<NextResponse<{ blogs?: Blog[]; error?: stri
     const githubHeaders = {
       headers: {
         Accept: "application/vnd.github.v3+json",
-        "User-Agent": "Voidnap-CMS",
+        "User-Agent": "HT-CMS",
         Authorization: `Bearer ${GITHUB_TOKEN}`,
       } as const,
     };
@@ -151,7 +151,7 @@ async function fetchBlogContent(
     const contentResponse = await fetch(file.url, {
       headers: {
         Accept: "application/vnd.github.raw",
-        "User-Agent": "Voidnap-CMS",
+        "User-Agent": "HT-CMS",
         Authorization: `Bearer ${GITHUB_TOKEN}`,
       },
     });

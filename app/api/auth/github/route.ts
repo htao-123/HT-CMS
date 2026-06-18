@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 
 export async function GET(request: NextRequest) {
   const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
@@ -10,8 +11,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Generate a random state parameter for security
-  const state = Buffer.from(Math.random().toString()).toString("base64");
+  const state = randomBytes(32).toString("base64url");
 
   // Construct the GitHub OAuth URL using the request's origin
   const origin = request.headers.get("x-forwarded-host")
@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${origin}/api/auth/callback`;
   const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=${state}`;
 
-  // Redirect to GitHub
-  return NextResponse.redirect(githubAuthUrl);
+  const response = NextResponse.redirect(githubAuthUrl);
+  response.cookies.set("voidnap_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 10 * 60,
+    path: "/",
+  });
+
+  return response;
 }

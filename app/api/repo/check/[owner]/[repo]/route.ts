@@ -24,7 +24,7 @@ export async function GET(
     // Check if repository exists using GitHub API
     const headers: Record<string, string> = {
       Accept: "application/vnd.github.v3+json",
-      "User-Agent": "Voidnap-CMS",
+      "User-Agent": "HT-CMS",
     };
 
     // Add GitHub token if available (for private repos)

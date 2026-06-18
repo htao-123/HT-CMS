@@ -54,7 +54,7 @@ export async function GET(): Promise<NextResponse<{ repos?: GitHubRepo[]; error?
       {
         headers: {
           Accept: "application/vnd.github.v3+json",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
         },
       }

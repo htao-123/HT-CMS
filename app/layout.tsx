@@ -20,7 +20,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Voidnap CMS",
+  title: "HT-CMS",
   description: "基于 GitHub 的内容管理系统",
   icons: {
     icon: "/favicon.svg",

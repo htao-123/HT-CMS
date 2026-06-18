@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         method: "PUT",
         headers: {
           Accept: "application/vnd.github.v3+json",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
           "Content-Type": "application/json",
         },

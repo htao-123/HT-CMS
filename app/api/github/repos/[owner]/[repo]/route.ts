@@ -64,7 +64,7 @@ export async function GET(
     const githubHeaders = {
       headers: {
         Accept: "application/vnd.github.v3+json",
-        "User-Agent": "Voidnap-CMS",
+        "User-Agent": "HT-CMS",
         Authorization: `Bearer ${GITHUB_TOKEN}`,
       } as const,
     };

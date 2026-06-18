@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { encodeGitHubContentsPath } from "@/lib/github-path";
 
 interface BlogConfig {
   repo: string;
@@ -91,11 +92,11 @@ export async function POST(request: Request) {
 
     // Get file SHA first
     const checkResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(filePath)}?ref=${config.branch}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(filePath)}?ref=${config.branch}`,
       {
         headers: {
           Accept: "application/vnd.github.v3+json",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
         },
       }
@@ -114,12 +115,12 @@ export async function POST(request: Request) {
 
     // Delete file
     const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(filePath)}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(filePath)}`,
       {
         method: "DELETE",
         headers: {
           Accept: "application/vnd.github.v3+json",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
           "Content-Type": "application/json",
         },

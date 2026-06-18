@@ -78,7 +78,7 @@ export async function GET(): Promise<NextResponse<{ projects?: Project[]; error?
     const githubHeaders = {
       headers: {
         Accept: "application/vnd.github.v3+json",
-        "User-Agent": "Voidnap-CMS",
+        "User-Agent": "HT-CMS",
         Authorization: `Bearer ${GITHUB_TOKEN}`,
       } as const,
     };
@@ -150,7 +150,7 @@ async function fetchProjectContent(
     const contentResponse = await fetch(file.url, {
       headers: {
         Accept: "application/vnd.github.raw",
-        "User-Agent": "Voidnap-CMS",
+        "User-Agent": "HT-CMS",
         Authorization: `Bearer ${GITHUB_TOKEN}`,
       },
     });

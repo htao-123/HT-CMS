@@ -82,7 +82,7 @@ export async function GET(): Promise<NextResponse<{ profile?: Profile | null; er
       {
         headers: {
           Accept: "application/vnd.github.raw",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
         },
       }

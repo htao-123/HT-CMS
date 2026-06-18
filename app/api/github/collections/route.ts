@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { encodeGitHubContentsPath } from "@/lib/github-path";
 
 // Types
 interface BlogConfig {
@@ -60,7 +61,9 @@ function parseFrontmatter(content: string): CollectionFrontmatter {
         value = false;
       }
 
-      (frontmatter as any)[key] = value;
+      if (key === "name" || key === "description") {
+        frontmatter[key] = String(value);
+      }
     }
   }
 
@@ -113,7 +116,7 @@ export async function GET(request: Request): Promise<NextResponse<{ collections?
       {
         headers: {
           Accept: "application/vnd.github.v3+json",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
         },
       }
@@ -141,7 +144,7 @@ export async function GET(request: Request): Promise<NextResponse<{ collections?
             {
               headers: {
                 Accept: "application/vnd.github.raw",
-                "User-Agent": "Voidnap-CMS",
+                "User-Agent": "HT-CMS",
                 Authorization: `Bearer ${GITHUB_TOKEN}`,
               },
             }
@@ -235,12 +238,12 @@ description: "${description || ""}"
     const filePath = `data/${type}/${id}/.collection.md`;
 
     const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(filePath)}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(filePath)}`,
       {
         method: "PUT",
         headers: {
           Accept: "application/vnd.github.v3+json",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
           "Content-Type": "application/json",
         },
@@ -318,12 +321,13 @@ export async function DELETE(request: Request): Promise<NextResponse<{ success?:
     const [owner, repoName] = config.repo.split("/");
 
     // First, get all files in the collection directory
+    const collectionPath = `data/${type}/${collectionId}`;
     const listResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/contents/data/${type}/${collectionId}?ref=${config.branch}`,
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(collectionPath)}?ref=${config.branch}`,
       {
         headers: {
           Accept: "application/vnd.github.v3+json",
-          "User-Agent": "Voidnap-CMS",
+          "User-Agent": "HT-CMS",
           Authorization: `Bearer ${GITHUB_TOKEN}`,
         },
       }
@@ -342,7 +346,7 @@ export async function DELETE(request: Request): Promise<NextResponse<{ success?:
     const githubHeaders = {
       headers: {
         Accept: "application/vnd.github.v3+json",
-        "User-Agent": "Voidnap-CMS",
+        "User-Agent": "HT-CMS",
         Authorization: `Bearer ${GITHUB_TOKEN}`,
         "Content-Type": "application/json",
       } as const,
@@ -350,7 +354,7 @@ export async function DELETE(request: Request): Promise<NextResponse<{ success?:
 
     const deletePromises = files.map(async (file: { path: string; sha: string }) => {
       const deleteResponse = await fetch(
-        `https://api.github.com/repos/${owner}/${repoName}/contents/${file.path}`,
+        `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubContentsPath(file.path)}`,
         {
           method: "DELETE",
           ...githubHeaders,

@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             <img
               src={theme === "dark" ? "/logo-dark.svg" : "/logo-light.svg"}
-              alt="Voidnap CMS"
+              alt="HT-CMS"
               className="h-9 auto"
             />
           </Link>
@@ -109,7 +109,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t py-8 bg-muted/30">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Voidnap CMS. Powered by GitHub.</p>
+          <p>© {new Date().getFullYear()} HT-CMS. Powered by GitHub.</p>
         </div>
       </footer>
     </div>
