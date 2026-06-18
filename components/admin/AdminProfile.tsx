@@ -391,6 +391,14 @@ export function AdminProfile() {
     </div>
   );
   const previewResume = cleanResume(resumeForm);
+  const selectedCount = selectedProjects.length;
+  const generatedSections = [
+    previewResume.summary ? "简介" : "",
+    previewResume.projects.length ? `${previewResume.projects.length} 个项目` : "",
+    previewResume.skills.length ? `${previewResume.skills.length} 组技能` : "",
+    previewResume.experience.length ? `${previewResume.experience.length} 段经历` : "",
+    previewResume.education.length ? `${previewResume.education.length} 段教育` : "",
+  ].filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -425,54 +433,79 @@ export function AdminProfile() {
         </TabsList>
 
         <TabsContent value="generate">
-          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  生成简历初稿
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="grid gap-2">
-                  <Label>目标岗位</Label>
-                  <Input
-                    value={targetRole}
-                    onChange={(e) => setTargetRole(e.target.value)}
-                    placeholder="例如：前端工程师、AI 应用工程师、全栈工程师"
-                  />
-                </div>
+          <div className="space-y-5">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border bg-background p-4">
+                <p className="text-xs font-medium uppercase text-muted-foreground">目标岗位</p>
+                <p className="mt-2 truncate text-lg font-semibold">{targetRole || "未设置"}</p>
+              </div>
+              <div className="rounded-lg border bg-background p-4">
+                <p className="text-xs font-medium uppercase text-muted-foreground">已选项目</p>
+                <p className="mt-2 text-lg font-semibold">{selectedCount} / {projects.length}</p>
+              </div>
+              <div className="rounded-lg border bg-background p-4">
+                <p className="text-xs font-medium uppercase text-muted-foreground">当前初稿</p>
+                <p className="mt-2 truncate text-lg font-semibold">
+                  {generatedSections.length ? generatedSections.join("、") : "尚未生成"}
+                </p>
+              </div>
+            </div>
 
-                <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-                  基础生成会直接复用已有项目、tags 和个人简介；AI 优化会调用智谱，把项目内容提炼成更像简历的摘要和亮点。
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button type="button" variant="outline" onClick={handleBasicGenerate} disabled={selectedProjects.length === 0 || isGeneratingResume}>
-                    生成基础版
-                  </Button>
-                  <Button type="button" onClick={handleAiGenerate} disabled={selectedProjects.length === 0 || isGeneratingResume} className="gap-2">
-                    <WandSparkles className="h-4 w-4" />
-                    {isGeneratingResume ? "生成中" : "AI 优化"}
-                  </Button>
-                </div>
-
-                {generateMessage && <p className="text-sm text-muted-foreground">{generateMessage}</p>}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>选择要放进简历的项目</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {projects.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                    暂无项目。先导入或新增项目后，就可以一键生成项目经历。
+            <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
+              <Card className="self-start">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    简历生成
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="grid gap-2">
+                    <Label>目标岗位</Label>
+                    <Input
+                      value={targetRole}
+                      onChange={(e) => setTargetRole(e.target.value)}
+                      placeholder="前端工程师、AI 应用工程师、全栈工程师"
+                    />
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap gap-2">
+
+                  <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 text-sm">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
+                      <p className="text-muted-foreground">基础生成会复用已有项目、技术栈和个人简介，快速生成能看的初稿。</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
+                      <p className="text-muted-foreground">AI 优化会调用智谱，将项目改写为职责、技术实现和交付价值。</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Button type="button" onClick={handleAiGenerate} disabled={selectedCount === 0 || isGeneratingResume} className="h-11 gap-2">
+                      <WandSparkles className="h-4 w-4" />
+                      {isGeneratingResume ? "正在优化简历" : "AI 优化生成"}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleBasicGenerate} disabled={selectedCount === 0 || isGeneratingResume} className="h-10">
+                      只生成基础版
+                    </Button>
+                  </div>
+
+                  {generateMessage && (
+                    <div className="rounded-lg border bg-background p-3 text-sm text-muted-foreground">
+                      {generateMessage}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex-row items-start justify-between space-y-0 pb-3">
+                  <div>
+                    <CardTitle>项目素材</CardTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">勾选后会进入简历项目经历，建议保留 2-4 个最能代表能力的项目。</p>
+                  </div>
+                  {projects.length > 0 && (
+                    <div className="flex shrink-0 gap-2">
                       <Button type="button" variant="outline" size="sm" onClick={() => setSelectedProjectIds(projects.map((project) => project.id))}>
                         全选
                       </Button>
@@ -480,28 +513,79 @@ export function AdminProfile() {
                         清空
                       </Button>
                     </div>
-                    <div className="grid gap-3">
-                      {projects.map((project) => (
-                        <label key={project.id} className="flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/40">
-                          <Checkbox
-                            checked={selectedProjectIds.includes(project.id)}
-                            onCheckedChange={(checked) => toggleProjectSelection(project.id, checked)}
-                            className="mt-1"
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-medium">{project.title}</span>
-                            {project.description && (
-                              <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">{project.description}</span>
-                            )}
-                            {project.tags.length > 0 && (
-                              <span className="mt-2 flex flex-wrap gap-1.5">
-                                {project.tags.slice(0, 6).map((tag) => (
-                                  <Badge key={tag} variant="secondary">{tag}</Badge>
-                                ))}
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {projects.length === 0 ? (
+                    <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+                      暂无项目。先导入或新增项目后，就可以一键生成项目经历。
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {projects.map((project) => {
+                        const checked = selectedProjectIds.includes(project.id);
+                        return (
+                          <label
+                            key={project.id}
+                            className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${
+                              checked ? "border-primary/60 bg-primary/5" : "hover:bg-muted/40"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(nextChecked) => toggleProjectSelection(project.id, nextChecked)}
+                              className="mt-1"
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-2">
+                                <span className="truncate font-medium">{project.title}</span>
+                                {checked && <Badge variant="secondary">已选</Badge>}
                               </span>
-                            )}
-                          </span>
-                        </label>
+                              {project.description && (
+                                <span className="mt-1 line-clamp-2 block text-sm leading-6 text-muted-foreground">{project.description}</span>
+                              )}
+                              {project.tags.length > 0 && (
+                                <span className="mt-3 flex flex-wrap gap-1.5">
+                                  {project.tags.slice(0, 5).map((tag) => (
+                                    <Badge key={tag} variant="outline">{tag}</Badge>
+                                  ))}
+                                  {project.tags.length > 5 && <Badge variant="outline">+{project.tags.length - 5}</Badge>}
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>生成结果概览</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {generatedSections.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    生成后会在这里看到简介、项目经历和技能分组概览。
+                  </div>
+                ) : (
+                  <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+                    <div className="rounded-lg border bg-muted/20 p-4">
+                      <p className="mb-2 text-sm font-medium">简介</p>
+                      <p className="text-sm leading-7 text-muted-foreground">{previewResume.summary || profileForm.bio || "暂无简介"}</p>
+                    </div>
+                    <div className="grid gap-3">
+                      {previewResume.projects.slice(0, 3).map((project) => (
+                        <div key={project.id} className="rounded-lg border p-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium">{project.title}</p>
+                            {project.role && <Badge variant="secondary">{project.role}</Badge>}
+                          </div>
+                          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{project.description}</p>
+                        </div>
                       ))}
                     </div>
                   </div>
