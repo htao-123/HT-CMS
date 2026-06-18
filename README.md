@@ -16,7 +16,7 @@
 - **GitHub 集成** - 通过 GitHub OAuth 登录，数据存储在你的仓库中
 
 ### 特色功能
-- **AI 智能简介** - 使用智谱 AI GLM-4-Flash 模型自动生成项目简介（完全免费）
+- **AI 智能生成** - 使用智谱 AI GLM-4-Flash 模型生成项目简介和简历初稿
 - **合辑管理** - 支持为项目和博客创建分类合集
 - **双视图模式** - 提供合辑视图和列表视图两种浏览方式
 - **暗黑模式** - 支持亮色/暗色主题切换
@@ -51,7 +51,7 @@ GITHUB_CLIENT_SECRET=your_github_client_secret_here
 # 访问 https://github.com/settings/tokens 创建 Fine-grained token，授予 repo 权限
 GITHUB_TOKEN=your_github_token_here
 
-# AI 服务配置（可选，用于 GitHub 仓库导入时的智能简介生成）
+# AI 服务配置（可选，用于 GitHub 仓库导入时的智能简介生成和简历生成）
 # 访问 https://open.bigmodel.cn/ 注册并获取 API Key
 # GLM-4-Flash 模型完全免费使用
 ZHIPU_API_KEY=your_zhipu_api_key_here

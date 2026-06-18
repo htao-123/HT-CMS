@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { ResumeData, ResumeItem, ResumeProject, Skill } from "@/types";
-import { ArrowDown, ArrowUp, BriefcaseBusiness, Eye, Github, GraduationCap, Linkedin, Plus, Save, Trash2, User, Wrench, X as TwitterIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, BriefcaseBusiness, Eye, Github, GraduationCap, Linkedin, Plus, Save, Sparkles, Trash2, User, WandSparkles, Wrench, X as TwitterIcon } from "lucide-react";
 
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -33,11 +34,75 @@ function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
   return next;
 }
 
+function getProjectLink(project: { link?: string; github?: string }) {
+  return project.link || project.github || "";
+}
+
+function summarizeProjectContent(content: string) {
+  const clean = content
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+    .replace(/\[[^\]]+\]\([^)]+\)/g, " ")
+    .replace(/[#>*_`~-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clean.slice(0, 120);
+}
+
+function buildBasicResumeDraft(
+  targetRole: string,
+  profileBio: string,
+  selectedProjects: ReturnType<typeof useData>["projects"]
+): Pick<ResumeData, "summary" | "projects" | "skills"> {
+  const allTags = selectedProjects.flatMap((project) => project.tags || []);
+  const uniqueTags = Array.from(new Set(allTags.map((tag) => tag.trim()).filter(Boolean)));
+  const projectTitles = selectedProjects.map((project) => project.title).filter(Boolean);
+
+  const summaryParts = [
+    profileBio,
+    targetRole ? `目标方向：${targetRole}。` : "",
+    projectTitles.length ? `具备 ${projectTitles.slice(0, 3).join("、")} 等项目经验。` : "",
+    uniqueTags.length ? `技术栈覆盖 ${uniqueTags.slice(0, 8).join("、")}。` : "",
+  ].filter(Boolean);
+
+  return {
+    summary: summaryParts.join(""),
+    projects: selectedProjects.map((project): ResumeProject => {
+      const tags = project.tags || [];
+      const contentSummary = summarizeProjectContent(project.content || "");
+      return {
+        id: `resume-${project.id}`,
+        sourceType: "linked",
+        projectId: project.id,
+        title: project.title,
+        role: targetRole || "",
+        period: "",
+        description: project.description || contentSummary,
+        highlights: [
+          project.description ? `负责 ${project.title} 的功能设计与实现，围绕业务目标完成核心能力建设。` : "",
+          tags.length ? `使用 ${tags.slice(0, 6).join("、")} 等技术完成项目开发与迭代。` : "",
+          contentSummary ? contentSummary : "",
+        ].filter(Boolean).slice(0, 3),
+        tags,
+        link: getProjectLink(project),
+        showLink: true,
+      };
+    }),
+    skills: uniqueTags.length
+      ? [{ id: "skill-tech-stack", category: "技术栈", items: uniqueTags.slice(0, 12) }]
+      : [],
+  };
+}
+
 export function AdminProfile() {
   const { profile, resume, projects, updateProfile, updateResume, pushProfile, pushResume, isPushing } = useData();
   const [profileForm, setProfileForm] = useState(profile);
   const [resumeForm, setResumeForm] = useState<ResumeData>(resume);
   const [saveMessage, setSaveMessage] = useState("");
+  const [targetRole, setTargetRole] = useState(profile.title || "前端工程师");
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [isGeneratingResume, setIsGeneratingResume] = useState(false);
+  const [generateMessage, setGenerateMessage] = useState("");
 
   useEffect(() => {
     setProfileForm(profile);
@@ -46,6 +111,12 @@ export function AdminProfile() {
   useEffect(() => {
     setResumeForm(resume);
   }, [resume]);
+
+  useEffect(() => {
+    if (selectedProjectIds.length === 0 && projects.length > 0) {
+      setSelectedProjectIds(projects.slice(0, 4).map((project) => project.id));
+    }
+  }, [projects, selectedProjectIds.length]);
 
   const setResumeField = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) => {
     setResumeForm((current) => ({ ...current, [key]: value }));
@@ -118,6 +189,77 @@ export function AdminProfile() {
     });
   };
 
+  const selectedProjects = projects.filter((project) => selectedProjectIds.includes(project.id));
+
+  const applyGeneratedResume = (draft: Pick<ResumeData, "summary" | "projects" | "skills">) => {
+    setResumeForm((current) => ({
+      ...current,
+      summary: draft.summary || current.summary,
+      projects: draft.projects,
+      skills: draft.skills,
+    }));
+  };
+
+  const handleBasicGenerate = () => {
+    if (selectedProjects.length === 0) {
+      setGenerateMessage("请至少选择一个项目");
+      return;
+    }
+
+    const draft = buildBasicResumeDraft(targetRole, profileForm.bio, selectedProjects);
+    applyGeneratedResume(draft);
+    setGenerateMessage("已生成基础版，可到预览查看");
+  };
+
+  const handleAiGenerate = async () => {
+    if (selectedProjects.length === 0) {
+      setGenerateMessage("请至少选择一个项目");
+      return;
+    }
+
+    setIsGeneratingResume(true);
+    setGenerateMessage("AI 正在生成...");
+
+    try {
+      const fallbackDraft = buildBasicResumeDraft(targetRole, profileForm.bio, selectedProjects);
+      const response = await fetch("/api/ai/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetRole,
+          profile: profileForm,
+          projects: selectedProjects,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.resume) {
+        applyGeneratedResume(fallbackDraft);
+        setGenerateMessage(data.error ? `AI 生成失败，已生成基础版：${data.error}` : "AI 生成失败，已生成基础版");
+        return;
+      }
+
+      applyGeneratedResume({
+        summary: data.resume.summary || fallbackDraft.summary,
+        projects: data.resume.projects?.length ? data.resume.projects : fallbackDraft.projects,
+        skills: data.resume.skills?.length ? data.resume.skills : fallbackDraft.skills,
+      });
+      setGenerateMessage("AI 优化完成，可到预览查看");
+    } catch (error) {
+      const fallbackDraft = buildBasicResumeDraft(targetRole, profileForm.bio, selectedProjects);
+      applyGeneratedResume(fallbackDraft);
+      setGenerateMessage(`AI 生成失败，已生成基础版：${error instanceof Error ? error.message : "未知错误"}`);
+    } finally {
+      setIsGeneratingResume(false);
+    }
+  };
+
+  const toggleProjectSelection = (projectId: string, checked: boolean) => {
+    setSelectedProjectIds((current) => (
+      checked ? Array.from(new Set([...current, projectId])) : current.filter((id) => id !== projectId)
+    ));
+  };
+
   const handleSave = async () => {
     updateProfile(profileForm);
     updateResume(resumeForm);
@@ -157,8 +299,9 @@ export function AdminProfile() {
         </div>
       </div>
 
-      <Tabs defaultValue="basic" className="w-full">
+      <Tabs defaultValue="generate" className="w-full">
         <TabsList className="mb-4 h-auto flex-wrap bg-background shadow-sm">
+          <TabsTrigger value="generate" className="gap-2"><Sparkles className="h-4 w-4" />智能生成</TabsTrigger>
           <TabsTrigger value="basic" className="gap-2"><User className="h-4 w-4" />基本资料</TabsTrigger>
           <TabsTrigger value="experience" className="gap-2"><BriefcaseBusiness className="h-4 w-4" />工作经历</TabsTrigger>
           <TabsTrigger value="projects" className="gap-2"><Github className="h-4 w-4" />项目经历</TabsTrigger>
@@ -166,6 +309,93 @@ export function AdminProfile() {
           <TabsTrigger value="skills" className="gap-2"><Wrench className="h-4 w-4" />技能</TabsTrigger>
           <TabsTrigger value="preview" className="gap-2"><Eye className="h-4 w-4" />预览</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="generate">
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  生成简历初稿
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid gap-2">
+                  <Label>目标岗位</Label>
+                  <Input
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                    placeholder="例如：前端工程师、AI 应用工程师、全栈工程师"
+                  />
+                </div>
+
+                <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  基础生成会直接复用已有项目、tags 和个人简介；AI 优化会调用智谱，把项目内容提炼成更像简历的摘要和亮点。
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" variant="outline" onClick={handleBasicGenerate} disabled={selectedProjects.length === 0 || isGeneratingResume}>
+                    生成基础版
+                  </Button>
+                  <Button type="button" onClick={handleAiGenerate} disabled={selectedProjects.length === 0 || isGeneratingResume} className="gap-2">
+                    <WandSparkles className="h-4 w-4" />
+                    {isGeneratingResume ? "生成中" : "AI 优化"}
+                  </Button>
+                </div>
+
+                {generateMessage && <p className="text-sm text-muted-foreground">{generateMessage}</p>}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>选择要放进简历的项目</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {projects.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    暂无项目。先导入或新增项目后，就可以一键生成项目经历。
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setSelectedProjectIds(projects.map((project) => project.id))}>
+                        全选
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setSelectedProjectIds([])}>
+                        清空
+                      </Button>
+                    </div>
+                    <div className="grid gap-3">
+                      {projects.map((project) => (
+                        <label key={project.id} className="flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/40">
+                          <Checkbox
+                            checked={selectedProjectIds.includes(project.id)}
+                            onCheckedChange={(checked) => toggleProjectSelection(project.id, checked)}
+                            className="mt-1"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-medium">{project.title}</span>
+                            {project.description && (
+                              <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">{project.description}</span>
+                            )}
+                            {project.tags.length > 0 && (
+                              <span className="mt-2 flex flex-wrap gap-1.5">
+                                {project.tags.slice(0, 6).map((tag) => (
+                                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                                ))}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         <TabsContent value="basic">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
