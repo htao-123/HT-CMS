@@ -21,15 +21,21 @@ export default function Home() {
           <div className="mb-6 inline-block rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground animate-pulse">
             求职中 / Available for hire
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold font-display tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/50">
-            {profile.name}
-          </h1>
-          <h2 className="text-2xl md:text-3xl text-muted-foreground mb-8 font-light">
-            {profile.title}
-          </h2>
-          <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-10 leading-relaxed">
-            {profile.bio}
-          </p>
+          {profile.name && (
+            <h1 className="text-5xl md:text-7xl font-bold font-display tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/50">
+              {profile.name}
+            </h1>
+          )}
+          {profile.title && (
+            <h2 className="text-2xl md:text-3xl text-muted-foreground mb-8 font-light">
+              {profile.title}
+            </h2>
+          )}
+          {profile.bio && (
+            <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-10 leading-relaxed">
+              {profile.bio}
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button size="lg" className="h-12 px-8 text-base" asChild>

@@ -88,7 +88,7 @@ export async function GET(): Promise<NextResponse<{ profile?: Profile | null; er
     const frontmatter = parseFrontmatter(content);
 
     const profile: Profile = {
-      name: frontmatter.name || "User",
+      name: frontmatter.name || "",
       title: frontmatter.title || "",
       bio: frontmatter.bio || "",
       email: frontmatter.email || "",
