@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ResumeData, ResumeItem, ResumeProject, Skill } from "@/types";
-import { ArrowDown, ArrowUp, BriefcaseBusiness, Eye, Github, GraduationCap, Linkedin, Plus, Save, Sparkles, Trash2, User, WandSparkles, Wrench, X as TwitterIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, Github, Linkedin, Plus, Save, Sparkles, Trash2, User, WandSparkles, X as TwitterIcon } from "lucide-react";
 
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -422,14 +422,10 @@ export function AdminProfile() {
       </div>
 
       <Tabs defaultValue="generate" className="w-full">
-        <TabsList className="mb-4 h-auto flex-wrap bg-background shadow-sm">
-          <TabsTrigger value="generate" className="gap-2"><Sparkles className="h-4 w-4" />智能生成</TabsTrigger>
-          <TabsTrigger value="basic" className="gap-2"><User className="h-4 w-4" />基本资料</TabsTrigger>
-          <TabsTrigger value="experience" className="gap-2"><BriefcaseBusiness className="h-4 w-4" />工作经历</TabsTrigger>
-          <TabsTrigger value="projects" className="gap-2"><Github className="h-4 w-4" />项目经历</TabsTrigger>
-          <TabsTrigger value="education" className="gap-2"><GraduationCap className="h-4 w-4" />教育背景</TabsTrigger>
-          <TabsTrigger value="skills" className="gap-2"><Wrench className="h-4 w-4" />技能</TabsTrigger>
-          <TabsTrigger value="preview" className="gap-2"><Eye className="h-4 w-4" />预览</TabsTrigger>
+        <TabsList className="mb-5 grid h-auto w-full grid-cols-3 bg-muted/70 p-1 shadow-sm">
+          <TabsTrigger value="generate" className="h-10 gap-2"><Sparkles className="h-4 w-4" />智能生成</TabsTrigger>
+          <TabsTrigger value="basic" className="h-10 gap-2"><User className="h-4 w-4" />编辑内容</TabsTrigger>
+          <TabsTrigger value="preview" className="h-10 gap-2"><Eye className="h-4 w-4" />预览</TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate">
@@ -596,8 +592,9 @@ export function AdminProfile() {
         </TabsContent>
 
         <TabsContent value="basic">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <Card>
+          <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <Card>
               <CardHeader><CardTitle>基础信息</CardTitle></CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid gap-2"><Label>姓名</Label><Input value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} /></div>
@@ -607,22 +604,21 @@ export function AdminProfile() {
                 <div className="grid gap-2"><Label>个人简介</Label><Textarea value={profileForm.bio} onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })} rows={4} /></div>
                 <div className="grid gap-2"><Label>简历摘要</Label><Textarea value={resumeForm.summary} onChange={(e) => setResumeField("summary", e.target.value)} rows={4} /></div>
               </CardContent>
-            </Card>
+              </Card>
 
-            <Card>
+              <Card>
               <CardHeader><CardTitle>社交链接</CardTitle></CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid gap-2"><Label className="flex items-center gap-2"><Github className="h-4 w-4" /> GitHub</Label><Input value={profileForm.socials.github || ""} onChange={(e) => setProfileForm({ ...profileForm, socials: { ...profileForm.socials, github: e.target.value } })} /></div>
                 <div className="grid gap-2"><Label className="flex items-center gap-2"><Linkedin className="h-4 w-4" /> LinkedIn</Label><Input value={profileForm.socials.linkedin || ""} onChange={(e) => setProfileForm({ ...profileForm, socials: { ...profileForm.socials, linkedin: e.target.value } })} /></div>
                 <div className="grid gap-2"><Label className="flex items-center gap-2"><TwitterIcon className="h-4 w-4" /> Twitter / X</Label><Input value={profileForm.socials.twitter || ""} onChange={(e) => setProfileForm({ ...profileForm, socials: { ...profileForm.socials, twitter: e.target.value } })} /></div>
               </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+              </Card>
+            </div>
 
-        <TabsContent value="experience">
-          <SectionHeader title="工作经历" action="添加经历" onAdd={addExperience} />
-          <div className="grid gap-4">
+            <section className="space-y-4">
+              <SectionHeader title="工作经历" action="添加经历" onAdd={addExperience} />
+              <div className="grid gap-4">
             {resumeForm.experience.map((item, index) => (
               <Card key={item.id}>
                 <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{item.title || "未命名经历"}</CardTitle>{renderItemControls(() => setResumeField("experience", moveItem(resumeForm.experience, index, -1)), () => setResumeField("experience", moveItem(resumeForm.experience, index, 1)), () => setResumeField("experience", resumeForm.experience.filter((_, i) => i !== index)))}</CardHeader>
@@ -637,12 +633,12 @@ export function AdminProfile() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </TabsContent>
+              </div>
+            </section>
 
-        <TabsContent value="projects">
-          <SectionHeader title="项目经历" action="添加项目" onAdd={addProject} />
-          <div className="grid gap-4">
+            <section className="space-y-4">
+              <SectionHeader title="项目经历" action="添加项目" onAdd={addProject} />
+              <div className="grid gap-4">
             {resumeForm.projects.map((item, index) => (
               <Card key={item.id}>
                 <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{item.title || "未命名项目"}</CardTitle>{renderItemControls(() => setResumeField("projects", moveItem(resumeForm.projects, index, -1)), () => setResumeField("projects", moveItem(resumeForm.projects, index, 1)), () => setResumeField("projects", resumeForm.projects.filter((_, i) => i !== index)))}</CardHeader>
@@ -673,12 +669,12 @@ export function AdminProfile() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </TabsContent>
+              </div>
+            </section>
 
-        <TabsContent value="education">
-          <SectionHeader title="教育背景" action="添加教育" onAdd={addEducation} />
-          <div className="grid gap-4">
+            <section className="space-y-4">
+              <SectionHeader title="教育背景" action="添加教育" onAdd={addEducation} />
+              <div className="grid gap-4">
             {resumeForm.education.map((item, index) => (
               <Card key={item.id}>
                 <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{item.title || "未命名教育经历"}</CardTitle>{renderItemControls(() => setResumeField("education", moveItem(resumeForm.education, index, -1)), () => setResumeField("education", moveItem(resumeForm.education, index, 1)), () => setResumeField("education", resumeForm.education.filter((_, i) => i !== index)))}</CardHeader>
@@ -691,12 +687,12 @@ export function AdminProfile() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </TabsContent>
+              </div>
+            </section>
 
-        <TabsContent value="skills">
-          <SectionHeader title="技能分组" action="添加分组" onAdd={addSkillGroup} />
-          <div className="grid gap-4 md:grid-cols-2">
+            <section className="space-y-4">
+              <SectionHeader title="技能分组" action="添加分组" onAdd={addSkillGroup} />
+              <div className="grid gap-4 md:grid-cols-2">
             {resumeForm.skills.map((group, index) => (
               <Card key={group.id}>
                 <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{group.category}</CardTitle>{renderItemControls(() => setResumeField("skills", moveItem(resumeForm.skills, index, -1)), () => setResumeField("skills", moveItem(resumeForm.skills, index, 1)), () => setResumeField("skills", resumeForm.skills.filter((_, i) => i !== index)))}</CardHeader>
@@ -706,6 +702,8 @@ export function AdminProfile() {
                 </CardContent>
               </Card>
             ))}
+              </div>
+            </section>
           </div>
         </TabsContent>
 
