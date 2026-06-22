@@ -11,13 +11,20 @@ interface ResumeGenerateRequest {
   projects?: Project[];
 }
 
+interface ResumePolishRequest {
+  mode: "polish";
+  text?: string;
+  label?: string;
+  context?: string;
+}
+
 interface AiResumeResponse {
   summary: string;
   projects: Array<Pick<ResumeProject, "projectId" | "title" | "role" | "period" | "description" | "highlights" | "tags" | "link" | "showLink">>;
   skills: Skill[];
 }
 
-export async function POST(request: Request): Promise<NextResponse<{ resume?: Partial<ResumeData>; error?: string }>> {
+export async function POST(request: Request): Promise<NextResponse<{ resume?: Partial<ResumeData>; text?: string; error?: string }>> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("voidnap_session");
 
@@ -31,7 +38,37 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
   }
 
   try {
-    const body = (await request.json()) as ResumeGenerateRequest;
+    const body = (await request.json()) as ResumeGenerateRequest | ResumePolishRequest;
+
+    if (body.mode === "polish") {
+      const originalText = body.text?.trim();
+      if (!originalText) {
+        return NextResponse.json({ error: "请先填写需要润色的内容" }, { status: 400 });
+      }
+
+      const response = await requestZhipu(apiKey, [
+        {
+          role: "system",
+          content: "你是资深中文技术简历顾问，只负责润色用户给定的简历字段。必须保留事实，不编造公司、学历、时间、数字、技术栈或成果。只返回合法 JSON，不要 Markdown，不要解释。",
+        },
+        { role: "user", content: buildPolishPrompt(originalText, body.label, body.context) },
+      ], 1000);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return NextResponse.json({ error: `智谱润色失败：${response.status} ${errorText}` }, { status: 500 });
+      }
+
+      const data = await response.json();
+      const parsed = parseJsonObject<{ text?: string }>(data.choices?.[0]?.message?.content);
+      const polished = parsed?.text?.trim();
+      if (!polished) {
+        return NextResponse.json({ error: "智谱返回格式无法解析" }, { status: 500 });
+      }
+
+      return NextResponse.json({ text: polished });
+    }
+
     const targetRole = body.targetRole?.trim() || "软件工程师";
     const profile = body.profile;
     const projects = body.projects || [];
@@ -89,6 +126,24 @@ function requestZhipu(apiKey: string, messages: Array<{ role: "system" | "user";
       max_tokens: maxTokens,
     }),
   });
+}
+
+function buildPolishPrompt(text: string, label = "简历字段", context = "") {
+  return `请润色下面这个“${label}”，让它更像中文技术简历里的表达。
+
+已填上下文：
+${context || "无"}
+
+原文：
+${text}
+
+要求：
+1. 只优化表达、结构和动作词，不新增事实。
+2. 不要编造数字、公司、职位、学历、时间、成果、技术栈。
+3. 如果原文是多行亮点，返回时仍保持多行，每行一条，不要合并成段落。
+4. 语言要具体、克制、可投递，避免“热爱学习、积极主动、熟悉各种技术”等空话。
+5. 保留原本的人称省略风格，不要写“我”。
+6. 只返回 JSON：{"text":"润色后的文本"}`;
 }
 
 function buildPrompt(targetRole: string, profile: UserProfile | undefined, projects: Project[]) {

@@ -230,6 +230,8 @@ export function AdminProfile() {
   const [saveMessage, setSaveMessage] = useState("");
   const [isGeneratingResume, setIsGeneratingResume] = useState(false);
   const [generateMessage, setGenerateMessage] = useState("");
+  const [polishingKey, setPolishingKey] = useState("");
+  const [polishMessage, setPolishMessage] = useState("");
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [hasInitializedProjectSelection, setHasInitializedProjectSelection] = useState(false);
 
@@ -349,6 +351,48 @@ export function AdminProfile() {
     setSelectedProjectIds((current) => (
       checked ? Array.from(new Set([...current, projectId])) : current.filter((id) => id !== projectId)
     ));
+  };
+
+  const polishText = async (
+    key: string,
+    label: string,
+    value: string,
+    onApply: (value: string) => void,
+    context?: string
+  ) => {
+    if (!value.trim()) {
+      setPolishMessage("请先填写需要润色的内容");
+      return;
+    }
+
+    setPolishingKey(key);
+    setPolishMessage("AI 正在润色...");
+
+    try {
+      const response = await fetch("/api/ai/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "polish",
+          label,
+          text: value,
+          context: context || `${profileForm.name || "未填写姓名"} / ${profileForm.title || "未填写职位"}`,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.text) {
+        setPolishMessage(data.error ? `AI 润色失败：${data.error}` : "AI 润色失败");
+        return;
+      }
+
+      onApply(data.text);
+      setPolishMessage("AI 润色完成，保存后会同步到 GitHub");
+    } catch (error) {
+      setPolishMessage(`AI 润色失败：${error instanceof Error ? error.message : "未知错误"}`);
+    } finally {
+      setPolishingKey("");
+    }
   };
 
   const handleAiGenerate = async () => {
@@ -489,6 +533,11 @@ export function AdminProfile() {
           {generateMessage}
         </div>
       )}
+      {polishMessage && (
+        <div className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground">
+          {polishMessage}
+        </div>
+      )}
 
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="mb-5 grid h-auto w-full grid-cols-2 bg-muted/70 p-1 shadow-sm">
@@ -577,8 +626,22 @@ export function AdminProfile() {
                 <div className="grid gap-2"><Label>职位</Label><Input value={profileForm.title} onChange={(e) => setProfileForm({ ...profileForm, title: e.target.value })} /></div>
                 <div className="grid gap-2"><Label>头像 URL</Label><Input value={profileForm.avatarUrl || ""} onChange={(e) => setProfileForm({ ...profileForm, avatarUrl: e.target.value })} /></div>
                 <div className="grid gap-2"><Label>邮箱</Label><Input type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} /></div>
-                <div className="grid gap-2"><Label>个人简介</Label><Textarea value={profileForm.bio} onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })} rows={4} /></div>
-                <div className="grid gap-2"><Label>简历摘要</Label><Textarea value={resumeForm.summary} onChange={(e) => setResumeField("summary", e.target.value)} rows={4} /></div>
+                <TextField
+                  label="个人简介"
+                  value={profileForm.bio}
+                  onChange={(value) => setProfileForm({ ...profileForm, bio: value })}
+                  onPolish={() => polishText("profile-bio", "个人简介", profileForm.bio, (value) => setProfileForm({ ...profileForm, bio: value }))}
+                  isPolishing={polishingKey === "profile-bio"}
+                  compact={false}
+                />
+                <TextField
+                  label="简历摘要"
+                  value={resumeForm.summary}
+                  onChange={(value) => setResumeField("summary", value)}
+                  onPolish={() => polishText("resume-summary", "简历摘要", resumeForm.summary, (value) => setResumeField("summary", value), `目标职位：${profileForm.title || "未填写"}；个人简介：${profileForm.bio || "未填写"}`)}
+                  isPolishing={polishingKey === "resume-summary"}
+                  compact={false}
+                />
               </CardContent>
               </Card>
 
@@ -628,8 +691,20 @@ export function AdminProfile() {
                   <Field label="公司" value={item.subtitle} onChange={(value) => updateExperience(index, { ...item, subtitle: value })} />
                   <Field label="时间" value={item.period} onChange={(value) => updateExperience(index, { ...item, period: value })} />
                   <Field label="地点" value={item.location || ""} onChange={(value) => updateExperience(index, { ...item, location: value })} />
-                  <TextField label="职责描述" value={item.description} onChange={(value) => updateExperience(index, { ...item, description: value })} />
-                  <TextField label="亮点，一行一条" value={listToLines(item.highlights)} onChange={(value) => updateExperience(index, { ...item, highlights: linesToList(value) })} />
+                  <TextField
+                    label="职责描述"
+                    value={item.description}
+                    onChange={(value) => updateExperience(index, { ...item, description: value })}
+                    onPolish={() => polishText(`experience-${item.id}-description`, "工作职责描述", item.description, (value) => updateExperience(index, { ...item, description: value }), `职位：${item.title || "未填写"}；公司：${item.subtitle || "未填写"}；时间：${item.period || "未填写"}；目标职位：${profileForm.title || "未填写"}`)}
+                    isPolishing={polishingKey === `experience-${item.id}-description`}
+                  />
+                  <TextField
+                    label="亮点，一行一条"
+                    value={listToLines(item.highlights)}
+                    onChange={(value) => updateExperience(index, { ...item, highlights: linesToList(value) })}
+                    onPolish={() => polishText(`experience-${item.id}-highlights`, "工作亮点", listToLines(item.highlights), (value) => updateExperience(index, { ...item, highlights: linesToList(value) }), `职位：${item.title || "未填写"}；公司：${item.subtitle || "未填写"}；职责描述：${item.description || "未填写"}`)}
+                    isPolishing={polishingKey === `experience-${item.id}-highlights`}
+                  />
                   <Field label="技术栈，逗号分隔" value={(item.tags || []).join(", ")} onChange={(value) => updateExperience(index, { ...item, tags: value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
                 </CardContent>
               </Card>
@@ -664,8 +739,20 @@ export function AdminProfile() {
                   <Field label="我的角色" value={item.role || ""} onChange={(value) => updateResumeProject(index, { ...item, role: value })} />
                   <Field label="时间" value={item.period || ""} onChange={(value) => updateResumeProject(index, { ...item, period: value })} />
                   <Field label="链接" value={item.link || ""} onChange={(value) => updateResumeProject(index, { ...item, link: value })} />
-                  <TextField label="项目摘要" value={item.description} onChange={(value) => updateResumeProject(index, { ...item, description: value })} />
-                  <TextField label="亮点，一行一条" value={listToLines(item.highlights)} onChange={(value) => updateResumeProject(index, { ...item, highlights: linesToList(value) })} />
+                  <TextField
+                    label="项目摘要"
+                    value={item.description}
+                    onChange={(value) => updateResumeProject(index, { ...item, description: value })}
+                    onPolish={() => polishText(`project-${item.id}-description`, "项目摘要", item.description, (value) => updateResumeProject(index, { ...item, description: value }), `项目：${item.title || "未填写"}；角色：${item.role || "未填写"}；技术栈：${item.tags.join("、") || "未填写"}；目标职位：${profileForm.title || "未填写"}`)}
+                    isPolishing={polishingKey === `project-${item.id}-description`}
+                  />
+                  <TextField
+                    label="亮点，一行一条"
+                    value={listToLines(item.highlights)}
+                    onChange={(value) => updateResumeProject(index, { ...item, highlights: linesToList(value) })}
+                    onPolish={() => polishText(`project-${item.id}-highlights`, "项目亮点", listToLines(item.highlights), (value) => updateResumeProject(index, { ...item, highlights: linesToList(value) }), `项目：${item.title || "未填写"}；角色：${item.role || "未填写"}；项目摘要：${item.description || "未填写"}；技术栈：${item.tags.join("、") || "未填写"}`)}
+                    isPolishing={polishingKey === `project-${item.id}-highlights`}
+                  />
                   <Field label="技术栈，逗号分隔" value={item.tags.join(", ")} onChange={(value) => updateResumeProject(index, { ...item, tags: value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
                 </CardContent>
               </Card>
@@ -684,7 +771,13 @@ export function AdminProfile() {
                   <Field label="专业 / 学位" value={item.subtitle} onChange={(value) => updateEducation(index, { ...item, subtitle: value })} />
                   <Field label="时间" value={item.period} onChange={(value) => updateEducation(index, { ...item, period: value })} />
                   <Field label="地点" value={item.location || ""} onChange={(value) => updateEducation(index, { ...item, location: value })} />
-                  <TextField label="说明" value={item.description} onChange={(value) => updateEducation(index, { ...item, description: value })} />
+                  <TextField
+                    label="说明"
+                    value={item.description}
+                    onChange={(value) => updateEducation(index, { ...item, description: value })}
+                    onPolish={() => polishText(`education-${item.id}-description`, "教育经历说明", item.description, (value) => updateEducation(index, { ...item, description: value }), `学校/机构：${item.title || "未填写"}；专业/学位：${item.subtitle || "未填写"}；时间：${item.period || "未填写"}`)}
+                    isPolishing={polishingKey === `education-${item.id}-description`}
+                  />
                 </CardContent>
               </Card>
             ))}
@@ -732,8 +825,42 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
   return <div className="grid gap-2"><Label>{label}</Label><Input value={value} onChange={(e) => onChange(e.target.value)} /></div>;
 }
 
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <div className="grid gap-2 md:col-span-2"><Label>{label}</Label><Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={4} /></div>;
+function TextField({
+  label,
+  value,
+  onChange,
+  onPolish,
+  isPolishing,
+  compact = true,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onPolish?: () => void;
+  isPolishing?: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <div className="grid gap-2 md:col-span-2">
+      <div className="flex items-center justify-between gap-3">
+        <Label>{label}</Label>
+        {onPolish && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onPolish}
+            disabled={isPolishing || !value.trim()}
+            className="h-8 gap-1.5"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {isPolishing ? "润色中" : "AI 润色"}
+          </Button>
+        )}
+      </div>
+      <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={compact ? 4 : 5} />
+    </div>
+  );
 }
 
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
