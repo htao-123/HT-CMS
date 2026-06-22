@@ -52,6 +52,15 @@
   body {
     background: white !important;
   }
+
+  [class~="fixed"],
+  [class~="sticky"],
+  [style*="position: fixed"],
+  [style*="position:fixed"],
+  [style*="position: sticky"],
+  [style*="position:sticky"] {
+    display: none !important;
+  }
 }
 
 :root {
