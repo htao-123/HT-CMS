@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { ResumeData, ResumeItem, ResumeProject, ResumeSectionId, Skill } from "@/types";
 import { ArrowDown, ArrowUp, Eye, Github, Linkedin, Plus, Save, Sparkles, Trash2, User, X as TwitterIcon } from "lucide-react";
 
@@ -229,6 +230,8 @@ export function AdminProfile() {
   const [saveMessage, setSaveMessage] = useState("");
   const [isGeneratingResume, setIsGeneratingResume] = useState(false);
   const [generateMessage, setGenerateMessage] = useState("");
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [hasInitializedProjectSelection, setHasInitializedProjectSelection] = useState(false);
 
   useEffect(() => {
     setProfileForm(profile);
@@ -237,6 +240,22 @@ export function AdminProfile() {
   useEffect(() => {
     setResumeForm(resume);
   }, [resume]);
+
+  useEffect(() => {
+    if (projects.length === 0) {
+      setSelectedProjectIds([]);
+      return;
+    }
+
+    const projectIds = new Set(projects.map((project) => project.id));
+    if (!hasInitializedProjectSelection) {
+      setSelectedProjectIds(projects.slice(0, 4).map((project) => project.id));
+      setHasInitializedProjectSelection(true);
+      return;
+    }
+
+    setSelectedProjectIds((current) => current.filter((id) => projectIds.has(id)));
+  }, [projects, hasInitializedProjectSelection]);
 
   const setResumeField = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) => {
     setResumeForm((current) => ({ ...current, [key]: value }));
@@ -325,14 +344,21 @@ export function AdminProfile() {
     }));
   };
 
+  const selectedProjects = projects.filter((project) => selectedProjectIds.includes(project.id));
+  const toggleProjectSelection = (projectId: string, checked: boolean) => {
+    setSelectedProjectIds((current) => (
+      checked ? Array.from(new Set([...current, projectId])) : current.filter((id) => id !== projectId)
+    ));
+  };
+
   const handleAiGenerate = async () => {
-    if (projects.length === 0) {
-      setGenerateMessage("暂无项目，先导入或新增项目后再生成");
+    if (selectedProjects.length === 0) {
+      setGenerateMessage(projects.length === 0 ? "暂无项目，先导入或新增项目后再生成" : "请至少选择一个项目");
       return;
     }
 
     const targetRole = profileForm.title?.trim() || "软件工程师";
-    const fallbackDraft = buildBasicResumeDraft(targetRole, profileForm.bio, projects);
+    const fallbackDraft = buildBasicResumeDraft(targetRole, profileForm.bio, selectedProjects);
     setIsGeneratingResume(true);
     setGenerateMessage("AI 正在读取项目并生成简历...");
 
@@ -344,7 +370,7 @@ export function AdminProfile() {
           mode: "generate",
           targetRole,
           profile: profileForm,
-          projects,
+          projects: selectedProjects,
         }),
       });
       const data = await response.json();
@@ -480,14 +506,67 @@ export function AdminProfile() {
                     AI 生成简历
                   </CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    自动读取当前项目、个人简介和职位，生成简历摘要、项目经历和技能分组。
+                    基于勾选项目、个人简介和职位，生成简历摘要、项目经历和技能分组。
                   </p>
                 </div>
-                <Button type="button" onClick={handleAiGenerate} disabled={projects.length === 0 || isGeneratingResume} className="gap-2">
+                <Button type="button" onClick={handleAiGenerate} disabled={selectedProjects.length === 0 || isGeneratingResume} className="gap-2">
                   <Sparkles className="h-4 w-4" />
                   {isGeneratingResume ? "生成中" : "一键生成"}
                 </Button>
               </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium">选择项目素材</p>
+                    <p className="text-xs text-muted-foreground">已选择 {selectedProjects.length} / {projects.length} 个项目</p>
+                  </div>
+                  {projects.length > 0 && (
+                    <div className="flex gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setSelectedProjectIds(projects.map((project) => project.id))}>
+                        全选
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setSelectedProjectIds([])}>
+                        清空
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {projects.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                    暂无项目。先导入或新增项目后，就可以用 AI 生成简历。
+                  </div>
+                ) : (
+                  <div className="grid max-h-72 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
+                    {projects.map((project) => {
+                      const checked = selectedProjectIds.includes(project.id);
+                      return (
+                        <label
+                          key={project.id}
+                          className={`flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors ${
+                            checked ? "border-primary/60 bg-primary/5" : "hover:bg-muted/40"
+                          }`}
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(nextChecked) => toggleProjectSelection(project.id, Boolean(nextChecked))}
+                            className="mt-1"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="truncate text-sm font-medium">{project.title}</span>
+                              {checked && <Badge variant="secondary">已选</Badge>}
+                            </span>
+                            {project.description && (
+                              <span className="mt-1 line-clamp-2 block text-xs leading-5 text-muted-foreground">{project.description}</span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
             </Card>
 
             <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
