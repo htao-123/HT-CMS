@@ -88,7 +88,7 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-8 print:bg-white print:px-0 print:py-0">
+    <div className="min-h-screen bg-background px-4 py-8 print:bg-white print:px-0 print:py-0">
       <div className="mx-auto max-w-[860px] bg-white px-6 py-8 text-slate-950 shadow-sm ring-1 ring-slate-200 sm:px-10 sm:py-10 print:max-w-none print:px-0 print:py-0 print:shadow-none print:ring-0">
         <header className="mb-8 border-b border-slate-200 pb-6 print:mb-4 print:pb-4">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
