@@ -38,12 +38,7 @@ const skillKeywords: SkillKeyword[] = [
 export function buildSkillGroupsFromProjects(projects: Project[]): Skill[] {
   const keywords = extractSkillKeywords(projects).map((keyword) => keyword.name);
   if (!keywords.length) return [];
-
-  return [{
-    id: "skill-supplemental",
-    category: "补充技能",
-    content: formatSkillContent(keywords),
-  }];
+  return [{ id: "", category: "", content: formatSkillContent(keywords) }];
 }
 
 export function mergeSkillGroups(primary: Skill[], fallback: Skill[]) {
@@ -53,13 +48,10 @@ export function mergeSkillGroups(primary: Skill[], fallback: Skill[]) {
   const fallbackKeywords = fallback.flatMap((skill) => parseSkillContent(skill.content));
 
   if (!merged.length) {
-    return fallbackKeywords.length
-      ? [{ id: "skill-supplemental", category: "补充技能", content: formatSkillContent(fallbackKeywords) }]
-      : [];
+    return [];
   }
 
   const existingKeywords = new Set(merged.flatMap((skill) => parseSkillContent(skill.content)).map(normalizeKey));
-  const supplemental: string[] = [];
 
   for (const keyword of fallbackKeywords) {
     if (existingKeywords.has(normalizeKey(keyword))) continue;
@@ -69,18 +61,8 @@ export function mergeSkillGroups(primary: Skill[], fallback: Skill[]) {
         ...merged[targetIndex],
         content: appendSkillKeyword(merged[targetIndex].content, keyword),
       };
-    } else {
-      supplemental.push(keyword);
     }
     existingKeywords.add(normalizeKey(keyword));
-  }
-
-  if (supplemental.length > 0) {
-    merged.push({
-      id: "skill-supplemental",
-      category: "补充技能",
-      content: formatSkillContent(supplemental),
-    });
   }
 
   return merged;

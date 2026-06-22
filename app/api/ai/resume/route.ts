@@ -206,7 +206,7 @@ ${JSON.stringify(projectPayload, null, 2)}
     }
   ],
   "skills": [
-    { "id": "skill-frontend", "category": "前端开发", "content": "- React、Next.js、TypeScript\\n- 组件化页面开发、路由组织与前端状态维护" }
+    { "id": "skill-1", "category": "根据项目素材生成的技能类别", "content": "- Markdown 列表形式的技能内容" }
   ]
 }`;
 }
