@@ -77,7 +77,7 @@ function normalizeSkill(value: unknown): Skill {
   return {
     id: typeof skill.id === "string" ? skill.id : "",
     category: typeof skill.category === "string" ? skill.category : "",
-    items: Array.isArray(skill.items) ? skill.items.filter((item): item is string => typeof item === "string") : [],
+    content: typeof skill.content === "string" ? skill.content : "",
   };
 }
 

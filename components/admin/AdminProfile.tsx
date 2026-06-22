@@ -19,14 +19,6 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function linesToList(value: string) {
-  return value.split("\n").map((line) => line.trim()).filter(Boolean);
-}
-
-function listToLines(value?: string[]) {
-  return (value || []).join("\n");
-}
-
 function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
   const nextIndex = index + direction;
   if (nextIndex < 0 || nextIndex >= items.length) return items;
@@ -136,14 +128,14 @@ function groupSkills(tags: string[]): Skill[] {
     .map((group) => ({
       id: group.id,
       category: group.category,
-      items: normalizedTags.filter((tag) => group.match.includes(tag)).slice(0, 8),
+      content: normalizedTags.filter((tag) => group.match.includes(tag)).slice(0, 8).join("、"),
     }))
-    .filter((group) => group.items.length > 0);
+    .filter((group) => group.content.length > 0);
 
-  const used = new Set(skillGroups.flatMap((group) => group.items));
+  const used = new Set(skillGroups.flatMap((group) => group.content.split("、")));
   const others = normalizedTags.filter((tag) => !used.has(tag)).slice(0, 8);
   if (others.length > 0) {
-    skillGroups.push({ id: "skill-other", category: "其他关键词", items: others });
+    skillGroups.push({ id: "skill-other", category: "其他关键词", content: others.join("、") });
   }
 
   return skillGroups;
@@ -178,8 +170,8 @@ function cleanResume(resume: ResumeData): ResumeData {
     })),
     education: resume.education.filter(hasItemContent),
     skills: resume.skills
-      .map((skill) => ({ ...skill, items: uniq(skill.items.map(normalizeTechName)) }))
-      .filter((skill) => skill.category.trim() && skill.items.length > 0),
+      .map((skill) => ({ ...skill, content: skill.content.trim() }))
+      .filter((skill) => skill.category.trim() && skill.content.length > 0),
     sectionOrder: normalizeSectionOrder(resume.sectionOrder),
   };
 }
@@ -323,7 +315,7 @@ export function AdminProfile() {
   const addSkillGroup = () => {
     setResumeField("skills", [
       ...resumeForm.skills,
-      { id: createId("skill"), category: "新技能分组", items: [] },
+      { id: createId("skill"), category: "新技能分组", content: "" },
     ]);
   };
 
@@ -494,7 +486,7 @@ export function AdminProfile() {
             {previewResume.skills.map((group) => (
               <div key={group.id} className="grid gap-2 p-3 sm:grid-cols-[150px_1fr]">
                 <div className="text-sm font-semibold">{group.category}</div>
-                <SkillPreviewLine items={group.items} />
+                <MarkdownText content={group.content} className="text-muted-foreground" />
               </div>
             ))}
           </div>
@@ -791,15 +783,21 @@ export function AdminProfile() {
             <section className="space-y-4">
               <SectionHeader title="技能分组" action="添加分组" onAdd={addSkillGroup} />
               <p className="text-sm text-muted-foreground">
-                推荐按“类别 + 关键词”维护，优先写可被项目支撑的硬技能；不建议写熟练度、百分比或进度条。
+                推荐按“类别 + 技能内容”维护，支持 Markdown；可以写关键词、短句或列表，但不建议写熟练度、百分比或进度条。
               </p>
               <div className="grid gap-4">
             {resumeForm.skills.map((group, index) => (
               <Card key={group.id}>
-                <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{group.category || "技能分组"} · {group.items.length} 项</CardTitle>{renderItemControls(() => setResumeField("skills", moveItem(resumeForm.skills, index, -1)), () => setResumeField("skills", moveItem(resumeForm.skills, index, 1)), () => setResumeField("skills", resumeForm.skills.filter((_, i) => i !== index)))}</CardHeader>
+                <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{group.category || "技能分组"}</CardTitle>{renderItemControls(() => setResumeField("skills", moveItem(resumeForm.skills, index, -1)), () => setResumeField("skills", moveItem(resumeForm.skills, index, 1)), () => setResumeField("skills", resumeForm.skills.filter((_, i) => i !== index)))}</CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-[220px_1fr]">
                   <Field label="分组名" value={group.category} onChange={(value) => updateSkillGroup(index, { ...group, category: value })} />
-                  <TextField label="技能关键词（每行一项）" value={listToLines(group.items)} onChange={(value) => updateSkillGroup(index, { ...group, items: linesToList(value) })} />
+                  <TextField
+                    label="技能内容（Markdown）"
+                    value={group.content}
+                    onChange={(value) => updateSkillGroup(index, { ...group, content: value })}
+                    onPolish={() => polishText(`skill-${group.id}-content`, "技能内容", group.content, (value) => updateSkillGroup(index, { ...group, content: value }), `分组：${group.category || "未填写"}；目标职位：${profileForm.title || "未填写"}`)}
+                    isPolishing={polishingKey === `skill-${group.id}-content`}
+                  />
                 </CardContent>
               </Card>
             ))}
@@ -830,22 +828,6 @@ function SectionHeader({ title, action, onAdd }: { title: string; action: string
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <div className="grid gap-2"><Label>{label}</Label><Input value={value} onChange={(e) => onChange(e.target.value)} /></div>;
-}
-
-function SkillPreviewLine({ items }: { items: string[] }) {
-  const visibleItems = items.filter((item) => item.trim());
-  if (!visibleItems.length) return null;
-
-  return (
-    <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm leading-6 text-muted-foreground">
-      {visibleItems.map((item, index) => (
-        <span key={`${item}-${index}`} className="inline-flex items-center gap-2">
-          {index > 0 && <span className="text-border">/</span>}
-          <span>{item}</span>
-        </span>
-      ))}
-    </div>
-  );
 }
 
 function TextField({

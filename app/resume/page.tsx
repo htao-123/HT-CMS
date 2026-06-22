@@ -28,7 +28,7 @@ export default function ResumePage() {
   const visibleExperience = resume.experience.filter(hasResumeItemContent);
   const visibleProjects = resume.projects.filter(hasResumeProjectContent);
   const visibleEducation = resume.education.filter(hasResumeItemContent);
-  const visibleSkills = resume.skills.filter((skill) => skill.category.trim() && skill.items.some((item) => item.trim()));
+  const visibleSkills = resume.skills.filter((skill) => skill.category.trim() && skill.content.trim());
   const orderedSections = normalizeSectionOrder(resume.sectionOrder);
   const contactItems = [profile.email, profile.socials.github, profile.socials.linkedin].filter(Boolean);
 
@@ -70,7 +70,7 @@ export default function ResumePage() {
             {visibleSkills.map((skillGroup) => (
               <div key={skillGroup.id} className="grid gap-2 py-3 sm:grid-cols-[132px_1fr] print:grid-cols-[110px_1fr] print:py-2">
                 <h3 className="text-sm font-semibold leading-6 text-slate-950">{skillGroup.category}</h3>
-                <SkillKeywordLine skills={skillGroup.items} />
+                <MarkdownText content={skillGroup.content} className="text-slate-600 print:leading-6" />
               </div>
             ))}
           </div>
@@ -151,22 +151,6 @@ function hasResumeProjectContent(project: ResumeProject) {
     project.description.trim() ||
     project.highlights.trim() ||
     project.tags.some((tag) => tag.trim())
-  );
-}
-
-function SkillKeywordLine({ skills }: { skills: string[] }) {
-  const visibleSkills = skills.filter((skill) => skill.trim());
-  if (!visibleSkills.length) return null;
-
-  return (
-    <p className="flex flex-wrap gap-x-2 gap-y-1 text-sm leading-6 text-slate-600">
-      {visibleSkills.map((skill, index) => (
-        <span key={`${skill}-${index}`} className="inline-flex items-center gap-2">
-          {index > 0 && <span className="text-slate-300">/</span>}
-          <span>{skill}</span>
-        </span>
-      ))}
-    </p>
   );
 }
 

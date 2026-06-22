@@ -44,7 +44,7 @@ export interface ResumeItem {
 export interface Skill {
   id: string;
   category: string;
-  items: string[];
+  content: string;
 }
 
 export interface ResumeProject {

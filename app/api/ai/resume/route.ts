@@ -177,7 +177,7 @@ ${JSON.stringify(projectPayload, null, 2)}
 3. projects 必须基于已有项目素材，不要编造项目；项目较多时优先选择 3-5 个最能体现目标岗位能力的项目。description 写 35-70 字，说明项目定位、技术复杂度和个人负责范围。
 4. 每个项目 highlights 返回一个 Markdown 文本块，包含 3-4 条以 "- " 开头的列表，每条 25-55 字，用“负责/设计/实现/封装/优化/接入/构建/沉淀”等动作开头，体现技术实现、工程化、跨端/数据/性能/部署/体验价值。
 5. 如果没有明确数据，不要编造百分比、用户量、耗时缩短等量化结果；可以写“提升维护性”“降低重复配置”“完善异常处理”等非虚构价值。
-6. skills 按主流技术简历写法归纳为 3-5 个技能类别，每组 4-8 个关键词；类别名短而具体，如“前端框架与语言”“跨端与客户端”“后端与接口”“工程化与部署”“AI 与数据”。只写能从项目素材中支撑的关键词，不写“精通/熟练/了解”、百分比、评分或进度条。
+6. skills 按主流技术简历写法归纳为 3-5 个技能类别；类别名短而具体，如“前端框架与语言”“跨端与客户端”“后端与接口”“工程化与部署”“AI 与数据”。content 返回 Markdown 文本，可以是“React、Next.js、TypeScript”这种关键词行，也可以是 2-3 条 "- " 列表；只写能从项目素材中支撑的内容，不写“精通/熟练/了解”、百分比、评分或进度条。
 7. role 根据目标岗位和项目内容填写，如“跨端应用开发”“前端开发”“全栈开发”“AI 应用开发”；period 没有资料就返回空字符串。
 8. 不要输出空项目、空技能；不要把 README 原文直接复制到 highlights。
 9. summary、description、highlights 可以少量使用 Markdown 的 **加粗** 或链接；不要使用标题、表格、图片或代码块。
@@ -198,7 +198,7 @@ ${JSON.stringify(projectPayload, null, 2)}
     }
   ],
   "skills": [
-    { "id": "skill-frontend", "category": "前端开发", "items": ["React"] }
+    { "id": "skill-frontend", "category": "前端开发", "content": "React、Next.js、TypeScript" }
   ]
 }`;
 }
@@ -256,9 +256,9 @@ function normalizeAiResume(value: AiResumeResponse, sourceProjects: Project[]): 
     .map((skill, index): Skill => ({
       id: String(skill.id || `skill-${index}`),
       category: String(skill.category || "技能"),
-      items: normalizeStringList(skill.items).slice(0, 8),
+      content: String(skill.content || "").trim(),
     }))
-    .filter((skill) => skill.items.length > 0);
+    .filter((skill) => skill.content.length > 0);
 
   return {
     summary: String(value.summary || "").trim(),
