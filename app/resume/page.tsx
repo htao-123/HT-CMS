@@ -3,6 +3,7 @@
 import { useData } from "@/lib/data-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MarkdownText } from "@/components/MarkdownText";
 import { Download, ExternalLink, Mail } from "lucide-react";
 import type { ResumeItem, ResumeProject, ResumeSectionId } from "@/types";
 
@@ -37,9 +38,7 @@ export default function ResumePage() {
       return (
         <section key={section} className="mb-8 print:mb-4">
           <SectionTitle title={sectionLabels[section]} />
-          <p className="text-sm leading-7 text-slate-600 print:leading-6">
-            {resume.summary || profile.bio}
-          </p>
+          <MarkdownText content={resume.summary || profile.bio} className="text-slate-600 print:leading-6" />
         </section>
       );
     }
@@ -199,14 +198,14 @@ function ResumeTimelineItem({ item }: { item: ResumeItem }) {
         <h3 className="text-base font-bold leading-6 text-slate-950">{item.title}</h3>
         {item.subtitle && <div className="text-sm font-medium text-slate-700">{item.subtitle}</div>}
         {item.description && (
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {item.description}
-          </p>
+          <MarkdownText content={item.description} className="mt-2 text-slate-600" />
         )}
         {item.highlights && item.highlights.length > 0 && (
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
             {item.highlights.filter(Boolean).map((highlight) => (
-              <li key={highlight}>{highlight}</li>
+              <li key={highlight}>
+                <MarkdownText content={highlight} className="text-slate-600" />
+              </li>
             ))}
           </ul>
         )}
@@ -236,14 +235,14 @@ function ProjectItem({ project }: { project: ResumeProject }) {
         </div>
         {project.role && <div className="text-sm font-medium text-slate-700">{project.role}</div>}
         {project.description && (
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {project.description}
-          </p>
+          <MarkdownText content={project.description} className="mt-2 text-slate-600" />
         )}
         {project.highlights.length > 0 && (
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
             {project.highlights.filter(Boolean).map((highlight) => (
-              <li key={highlight}>{highlight}</li>
+              <li key={highlight}>
+                <MarkdownText content={highlight} className="text-slate-600" />
+              </li>
             ))}
           </ul>
         )}

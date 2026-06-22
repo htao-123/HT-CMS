@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { MarkdownText } from "@/components/MarkdownText";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -463,7 +464,7 @@ export function AdminProfile() {
     if (section === "summary") {
       return (
         <PreviewSection key={section} title="简介">
-          <p className="text-sm leading-7 text-muted-foreground">{previewResume.summary || profileForm.bio || "暂无简介"}</p>
+          <MarkdownText content={previewResume.summary || profileForm.bio || "暂无简介"} className="text-muted-foreground" />
         </PreviewSection>
       );
     }
@@ -859,6 +860,11 @@ function TextField({
         )}
       </div>
       <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={compact ? 4 : 5} />
+      {onPolish && (
+        <p className="text-xs text-muted-foreground">
+          支持 Markdown：**加粗**、[链接](https://example.com)、列表、行内代码。
+        </p>
+      )}
     </div>
   );
 }
@@ -868,5 +874,5 @@ function PreviewSection({ title, children }: { title: string; children: React.Re
 }
 
 function PreviewItem({ title, subtitle, period, description, highlights, tags }: { title?: string; subtitle?: string; period?: string; description?: string; highlights?: string[]; tags?: string[] }) {
-  return <div className="grid gap-2 sm:grid-cols-[150px_1fr]"><div className="text-xs font-medium uppercase text-muted-foreground">{period}</div><div><div className="font-semibold">{title}</div>{subtitle && <div className="text-sm text-primary">{subtitle}</div>}{description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}{highlights && highlights.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">{highlights.map((item) => <li key={item}>{item}</li>)}</ul>}{tags && tags.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}</div></div>;
+  return <div className="grid gap-2 sm:grid-cols-[150px_1fr]"><div className="text-xs font-medium uppercase text-muted-foreground">{period}</div><div><div className="font-semibold">{title}</div>{subtitle && <div className="text-sm text-primary">{subtitle}</div>}{description && <MarkdownText content={description} className="mt-1 text-muted-foreground" />}{highlights && highlights.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">{highlights.map((item) => <li key={item}><MarkdownText content={item} className="text-muted-foreground" /></li>)}</ul>}{tags && tags.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}</div></div>;
 }

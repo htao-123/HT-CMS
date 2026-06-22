@@ -49,7 +49,7 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
       const response = await requestZhipu(apiKey, [
         {
           role: "system",
-          content: "你是资深中文技术简历顾问，只负责润色用户给定的简历字段。必须保留事实，不编造公司、学历、时间、数字、技术栈或成果。只返回合法 JSON，不要 Markdown，不要解释。",
+          content: "你是资深中文技术简历顾问，只负责润色用户给定的简历字段。必须保留事实，不编造公司、学历、时间、数字、技术栈或成果。只返回合法 JSON，不要解释。",
         },
         { role: "user", content: buildPolishPrompt(originalText, body.label, body.context) },
       ], 1000);
@@ -81,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
     const response = await requestZhipu(apiKey, [
       {
         role: "system",
-        content: "你是资深中文技术简历顾问，擅长把个人项目改写成能投递的技术简历。只返回合法 JSON，不要 Markdown，不要解释。",
+        content: "你是资深中文技术简历顾问，擅长把个人项目改写成能投递的技术简历。只返回合法 JSON，不要解释。",
       },
       { role: "user", content: prompt },
     ], 3600);
@@ -143,7 +143,8 @@ ${text}
 3. 如果原文是多行亮点，返回时仍保持多行，每行一条，不要合并成段落。
 4. 语言要具体、克制、可投递，避免“热爱学习、积极主动、熟悉各种技术”等空话。
 5. 保留原本的人称省略风格，不要写“我”。
-6. 只返回 JSON：{"text":"润色后的文本"}`;
+6. 如果原文已有 Markdown，请保留格式；可以少量使用 **加粗** 强调关键词，但不要使用标题、表格、图片或代码块。
+7. 只返回 JSON：{"text":"润色后的文本"}`;
 }
 
 function buildPrompt(targetRole: string, profile: UserProfile | undefined, projects: Project[]) {
@@ -179,7 +180,8 @@ ${JSON.stringify(projectPayload, null, 2)}
 6. skills 从项目 tags 和内容中归纳 3-4 个技能分组，每组 4-8 项，分组名要像简历：客户端开发、前端工程、后端与接口、工程化与工具链等。
 7. role 根据目标岗位和项目内容填写，如“跨端应用开发”“前端开发”“全栈开发”“AI 应用开发”；period 没有资料就返回空字符串。
 8. 不要输出空项目、空技能；不要把 README 原文直接复制到 highlights。
-9. 只返回 JSON，结构必须是：
+9. summary、description、highlights 可以少量使用 Markdown 的 **加粗** 或链接；不要使用标题、表格、图片或代码块。
+10. 只返回 JSON，结构必须是：
 {
   "summary": "string",
   "projects": [
