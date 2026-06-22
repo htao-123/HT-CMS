@@ -5,6 +5,7 @@ import type { Project, ResumeData, ResumeProject, Skill, UserProfile } from "@/t
 export const dynamic = "force-dynamic";
 
 interface ResumeGenerateRequest {
+  mode?: "generate";
   targetRole?: string;
   profile?: UserProfile;
   projects?: Project[];
@@ -33,32 +34,20 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
     const body = (await request.json()) as ResumeGenerateRequest;
     const targetRole = body.targetRole?.trim() || "软件工程师";
     const profile = body.profile;
-    const projects = (body.projects || []).slice(0, 5);
+    const projects = body.projects || [];
 
     if (projects.length === 0) {
       return NextResponse.json({ error: "请至少选择一个项目" }, { status: 400 });
     }
 
     const prompt = buildPrompt(targetRole, profile, projects);
-    const response = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+    const response = await requestZhipu(apiKey, [
+      {
+        role: "system",
+        content: "你是资深中文技术简历顾问，擅长把个人项目改写成能投递的技术简历。只返回合法 JSON，不要 Markdown，不要解释。",
       },
-      body: JSON.stringify({
-        model: process.env.ZHIPU_MODEL || "glm-4-flash",
-        messages: [
-          {
-            role: "system",
-            content: "你是资深中文技术简历顾问，擅长把个人项目改写成能投递的技术简历。只返回合法 JSON，不要 Markdown，不要解释。",
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.25,
-        max_tokens: 2600,
-      }),
-    });
+      { role: "user", content: prompt },
+    ], 3600);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -67,7 +56,7 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
-    const parsed = parseJsonObject(content);
+    const parsed = parseJsonObject<AiResumeResponse>(content);
     if (!parsed) {
       return NextResponse.json({ error: "智谱返回格式无法解析" }, { status: 500 });
     }
@@ -84,6 +73,22 @@ export async function POST(request: Request): Promise<NextResponse<{ resume?: Pa
     console.error("[AI Resume] Failed to generate resume:", error);
     return NextResponse.json({ error: "生成简历失败" }, { status: 500 });
   }
+}
+
+function requestZhipu(apiKey: string, messages: Array<{ role: "system" | "user"; content: string }>, maxTokens: number) {
+  return fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: process.env.ZHIPU_MODEL || "glm-4-flash",
+      messages,
+      temperature: 0.25,
+      max_tokens: maxTokens,
+    }),
+  });
 }
 
 function buildPrompt(targetRole: string, profile: UserProfile | undefined, projects: Project[]) {
@@ -107,13 +112,13 @@ ${JSON.stringify({
   github: profile?.socials?.github || "",
 }, null, 2)}
 
-候选项目：
+已有项目素材：
 ${JSON.stringify(projectPayload, null, 2)}
 
 要求：
 1. 这是一份“求职简历”，不是项目介绍页。语言要像候选人的工作成果，避免“这是一个……项目”这种介绍腔。
 2. summary 写 90-150 字，结构为：目标岗位匹配度 + 核心技术栈 + 能独立完成的事情 + 代表项目。不要写“热爱学习”“积极主动”等空话。
-3. projects 必须基于候选项目，不要编造项目。description 写 35-70 字，说明项目定位、技术复杂度和个人负责范围。
+3. projects 必须基于已有项目素材，不要编造项目；项目较多时优先选择 3-5 个最能体现目标岗位能力的项目。description 写 35-70 字，说明项目定位、技术复杂度和个人负责范围。
 4. 每个项目 highlights 生成 3-4 条，每条 25-55 字，用“负责/设计/实现/封装/优化/接入/构建/沉淀”等动作开头，体现技术实现、工程化、跨端/数据/性能/部署/体验价值。
 5. 如果没有明确数据，不要编造百分比、用户量、耗时缩短等量化结果；可以写“提升维护性”“降低重复配置”“完善异常处理”等非虚构价值。
 6. skills 从项目 tags 和内容中归纳 3-4 个技能分组，每组 4-8 项，分组名要像简历：客户端开发、前端工程、后端与接口、工程化与工具链等。
@@ -151,17 +156,17 @@ function stripMarkdown(value: string) {
     .trim();
 }
 
-function parseJsonObject(value: unknown): AiResumeResponse | null {
+function parseJsonObject<T>(value: unknown): T | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
   try {
-    return JSON.parse(trimmed) as AiResumeResponse;
+    return JSON.parse(trimmed) as T;
   } catch {
     const start = trimmed.indexOf("{");
     const end = trimmed.lastIndexOf("}");
     if (start < 0 || end <= start) return null;
     try {
-      return JSON.parse(trimmed.slice(start, end + 1)) as AiResumeResponse;
+      return JSON.parse(trimmed.slice(start, end + 1)) as T;
     } catch {
       return null;
     }
