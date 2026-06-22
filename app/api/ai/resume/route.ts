@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { buildSkillGroupsFromProjects, ensureMarkdownList, mergeSkillGroups } from "@/lib/resume-skills";
 import type { Project, ResumeData, ResumeProject, Skill, UserProfile } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -259,13 +260,14 @@ function normalizeAiResume(value: AiResumeResponse, sourceProjects: Project[]): 
     })
     .filter((project): project is ResumeProject => project !== null);
 
-  const skills = (Array.isArray(value.skills) ? value.skills : [])
+  const aiSkills = (Array.isArray(value.skills) ? value.skills : [])
     .map((skill, index): Skill => ({
       id: String(skill.id || `skill-${index}`),
       category: String(skill.category || "技能"),
       content: normalizeSkillContent(skill),
     }))
     .filter((skill) => skill.content.length > 0);
+  const skills = mergeSkillGroups(aiSkills, buildSkillGroupsFromProjects(sourceProjects));
 
   return {
     summary: String(value.summary || "").trim(),
@@ -284,9 +286,4 @@ function normalizeSkillContent(skill: AiSkillResponse) {
   if (content) return ensureMarkdownList(content);
   const items = normalizeStringList(skill.items);
   return items.length ? `- ${items.join("、")}` : "";
-}
-
-function ensureMarkdownList(content: string) {
-  if (/^\s*[-*]\s+/m.test(content)) return content;
-  return `- ${content}`;
 }

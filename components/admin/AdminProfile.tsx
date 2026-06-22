@@ -12,6 +12,7 @@ import { MarkdownText } from "@/components/MarkdownText";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { buildSkillGroupsFromProjects, mergeSkillGroups } from "@/lib/resume-skills";
 import type { ResumeData, ResumeItem, ResumeProject, ResumeSectionId, Skill } from "@/types";
 import { ArrowDown, ArrowUp, Eye, Github, Linkedin, Plus, Save, Sparkles, Trash2, User, X as TwitterIcon } from "lucide-react";
 
@@ -99,64 +100,6 @@ function inferProjectFocus(tags: string[]) {
   return "产品功能";
 }
 
-function groupSkills(tags: string[]): Skill[] {
-  const normalizedTags = uniq(tags.map(normalizeTechName));
-  const groups = [
-    {
-      id: "skill-client",
-      category: "跨端与客户端",
-      match: ["Dart", "Flutter", "Kotlin", "Swift", "C++", "CMake", "Objective-C"],
-    },
-    {
-      id: "skill-frontend",
-      category: "前端框架与语言",
-      match: ["React", "Vue", "Next.js", "TypeScript", "JavaScript"],
-    },
-    {
-      id: "skill-backend",
-      category: "后端与接口",
-      match: ["Python", "FastAPI", "Node.js", "Express", "Rust"],
-    },
-    {
-      id: "skill-engineering",
-      category: "工程化与部署",
-      match: ["Tailwind CSS", "Shell", "Docker", "GitHub Actions", "CMake"],
-    },
-  ];
-
-  const skillGroups = groups
-    .map((group) => {
-      const matchedTags = normalizedTags.filter((tag) => group.match.includes(tag)).slice(0, 8);
-      return {
-        id: group.id,
-        category: group.category,
-        content: formatSkillContent(matchedTags),
-      };
-    })
-    .filter((group) => group.content.length > 0);
-
-  const used = new Set(skillGroups.flatMap((group) => parseSkillContent(group.content)));
-  const others = normalizedTags.filter((tag) => !used.has(tag)).slice(0, 8);
-  if (others.length > 0) {
-    skillGroups.push({ id: "skill-other", category: "其他关键词", content: formatSkillContent(others) });
-  }
-
-  return skillGroups;
-}
-
-function formatSkillContent(tags: string[]) {
-  if (!tags.length) return "";
-  return `- ${tags.join("、")}`;
-}
-
-function parseSkillContent(content: string) {
-  return content
-    .replace(/^- /gm, "")
-    .split(/[、,，/；;\n]+/)
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-}
-
 function cleanResume(resume: ResumeData): ResumeData {
   const hasItemContent = (item: ResumeItem) => Boolean(
     item.title.trim() ||
@@ -233,7 +176,7 @@ function buildBasicResumeDraft(
         showLink: true,
       };
     }),
-    skills: groupSkills(uniqueTags),
+    skills: buildSkillGroupsFromProjects(selectedProjects),
   };
 }
 
@@ -442,7 +385,7 @@ export function AdminProfile() {
       applyGeneratedResume({
         summary: data.resume.summary || fallbackDraft.summary,
         projects: data.resume.projects?.length ? data.resume.projects : fallbackDraft.projects,
-        skills: data.resume.skills?.length ? data.resume.skills : fallbackDraft.skills,
+        skills: data.resume.skills?.length ? mergeSkillGroups(data.resume.skills, fallbackDraft.skills) : fallbackDraft.skills,
       });
       setGenerateMessage("AI 生成完成，可继续编辑或预览后保存");
     } catch (error) {
