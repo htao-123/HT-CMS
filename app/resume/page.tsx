@@ -144,7 +144,7 @@ function hasResumeItemContent(item: ResumeItem) {
     item.period.trim() ||
     item.description.trim() ||
     item.location?.trim() ||
-    item.highlights?.some((highlight) => highlight.trim()) ||
+    item.highlights?.trim() ||
     item.tags?.some((tag) => tag.trim())
   );
 }
@@ -155,7 +155,7 @@ function hasResumeProjectContent(project: ResumeProject) {
     project.role?.trim() ||
     project.period?.trim() ||
     project.description.trim() ||
-    project.highlights.some((highlight) => highlight.trim()) ||
+    project.highlights.trim() ||
     project.tags.some((tag) => tag.trim())
   );
 }
@@ -200,15 +200,7 @@ function ResumeTimelineItem({ item }: { item: ResumeItem }) {
         {item.description && (
           <MarkdownText content={item.description} className="mt-2 text-slate-600" />
         )}
-        {item.highlights && item.highlights.length > 0 && (
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
-            {item.highlights.filter(Boolean).map((highlight) => (
-              <li key={highlight}>
-                <MarkdownText content={highlight} className="text-slate-600" />
-              </li>
-            ))}
-          </ul>
-        )}
+        {item.highlights && <MarkdownText content={item.highlights} className="mt-2 text-slate-600" />}
         {item.tags && item.tags.length > 0 && <TagList tags={item.tags} />}
       </div>
     </article>
@@ -237,15 +229,7 @@ function ProjectItem({ project }: { project: ResumeProject }) {
         {project.description && (
           <MarkdownText content={project.description} className="mt-2 text-slate-600" />
         )}
-        {project.highlights.length > 0 && (
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
-            {project.highlights.filter(Boolean).map((highlight) => (
-              <li key={highlight}>
-                <MarkdownText content={highlight} className="text-slate-600" />
-              </li>
-            ))}
-          </ul>
-        )}
+        {project.highlights && <MarkdownText content={project.highlights} className="mt-2 text-slate-600" />}
         {project.tags.length > 0 && <TagList tags={project.tags} />}
       </div>
     </article>

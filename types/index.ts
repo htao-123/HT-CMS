@@ -37,7 +37,7 @@ export interface ResumeItem {
   period: string;
   description: string;
   location?: string;
-  highlights?: string[];
+  highlights?: string;
   tags?: string[];
 }
 
@@ -55,7 +55,7 @@ export interface ResumeProject {
   role?: string;
   period?: string;
   description: string;
-  highlights: string[];
+  highlights: string;
   tags: string[];
   link?: string;
   showLink?: boolean;

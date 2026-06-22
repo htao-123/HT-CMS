@@ -151,7 +151,7 @@ function cleanResume(resume: ResumeData): ResumeData {
     item.period.trim() ||
     item.description.trim() ||
     item.location?.trim() ||
-    item.highlights?.some((highlight) => highlight.trim()) ||
+    item.highlights?.trim() ||
     item.tags?.some((tag) => tag.trim())
   );
   const hasProjectContent = (project: ResumeProject) => Boolean(
@@ -159,7 +159,7 @@ function cleanResume(resume: ResumeData): ResumeData {
     project.role?.trim() ||
     project.period?.trim() ||
     project.description.trim() ||
-    project.highlights.some((highlight) => highlight.trim()) ||
+    project.highlights.trim() ||
     project.tags.some((tag) => tag.trim())
   );
 
@@ -168,7 +168,7 @@ function cleanResume(resume: ResumeData): ResumeData {
     experience: resume.experience.filter(hasItemContent),
     projects: resume.projects.filter(hasProjectContent).map((project) => ({
       ...project,
-      highlights: uniq(project.highlights),
+      highlights: project.highlights.trim(),
       tags: uniq(project.tags.map(normalizeTechName)),
     })),
     education: resume.education.filter(hasItemContent),
@@ -211,10 +211,10 @@ function buildBasicResumeDraft(
         period: "",
         description: project.description || contentSummary,
         highlights: [
-          `围绕${project.description || project.title}拆解核心使用场景，完成${focus}的功能设计、开发与体验打磨。`,
-          tags.length ? `基于 ${tags.slice(0, 6).join("、")} 构建主要能力，覆盖界面交互、数据处理和多端适配等环节。` : "",
-          contentSummary ? `结合项目文档沉淀实现细节，保证功能可维护、可迭代。` : "负责项目从方案到落地的实现，关注可维护性与实际使用体验。",
-        ].filter(Boolean).slice(0, 3),
+          `- 围绕${project.description || project.title}拆解核心使用场景，完成${focus}的功能设计、开发与体验打磨。`,
+          tags.length ? `- 基于 ${tags.slice(0, 6).join("、")} 构建主要能力，覆盖界面交互、数据处理和多端适配等环节。` : "",
+          contentSummary ? "- 结合项目文档沉淀实现细节，保证功能可维护、可迭代。" : "- 负责项目从方案到落地的实现，关注可维护性与实际使用体验。",
+        ].filter(Boolean).join("\n"),
         tags,
         link: getProjectLink(project),
         showLink: true,
@@ -297,7 +297,7 @@ export function AdminProfile() {
   const addExperience = () => {
     setResumeField("experience", [
       ...resumeForm.experience,
-      { id: createId("exp"), title: "", subtitle: "", period: "", location: "", description: "", highlights: [], tags: [] },
+      { id: createId("exp"), title: "", subtitle: "", period: "", location: "", description: "", highlights: "", tags: [] },
     ]);
   };
 
@@ -311,7 +311,7 @@ export function AdminProfile() {
   const addProject = () => {
     setResumeField("projects", [
       ...resumeForm.projects,
-      { id: createId("rproj"), sourceType: "custom", title: "", role: "", period: "", description: "", highlights: [], tags: [], link: "", showLink: true },
+      { id: createId("rproj"), sourceType: "custom", title: "", role: "", period: "", description: "", highlights: "", tags: [], link: "", showLink: true },
     ]);
   };
 
@@ -700,10 +700,10 @@ export function AdminProfile() {
                     isPolishing={polishingKey === `experience-${item.id}-description`}
                   />
                   <TextField
-                    label="亮点，一行一条"
-                    value={listToLines(item.highlights)}
-                    onChange={(value) => updateExperience(index, { ...item, highlights: linesToList(value) })}
-                    onPolish={() => polishText(`experience-${item.id}-highlights`, "工作亮点", listToLines(item.highlights), (value) => updateExperience(index, { ...item, highlights: linesToList(value) }), `职位：${item.title || "未填写"}；公司：${item.subtitle || "未填写"}；职责描述：${item.description || "未填写"}`)}
+                    label="亮点（Markdown）"
+                    value={item.highlights || ""}
+                    onChange={(value) => updateExperience(index, { ...item, highlights: value })}
+                    onPolish={() => polishText(`experience-${item.id}-highlights`, "工作亮点", item.highlights || "", (value) => updateExperience(index, { ...item, highlights: value }), `职位：${item.title || "未填写"}；公司：${item.subtitle || "未填写"}；职责描述：${item.description || "未填写"}`)}
                     isPolishing={polishingKey === `experience-${item.id}-highlights`}
                   />
                   <Field label="技术栈，逗号分隔" value={(item.tags || []).join(", ")} onChange={(value) => updateExperience(index, { ...item, tags: value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
@@ -748,10 +748,10 @@ export function AdminProfile() {
                     isPolishing={polishingKey === `project-${item.id}-description`}
                   />
                   <TextField
-                    label="亮点，一行一条"
-                    value={listToLines(item.highlights)}
-                    onChange={(value) => updateResumeProject(index, { ...item, highlights: linesToList(value) })}
-                    onPolish={() => polishText(`project-${item.id}-highlights`, "项目亮点", listToLines(item.highlights), (value) => updateResumeProject(index, { ...item, highlights: linesToList(value) }), `项目：${item.title || "未填写"}；角色：${item.role || "未填写"}；项目摘要：${item.description || "未填写"}；技术栈：${item.tags.join("、") || "未填写"}`)}
+                    label="亮点（Markdown）"
+                    value={item.highlights}
+                    onChange={(value) => updateResumeProject(index, { ...item, highlights: value })}
+                    onPolish={() => polishText(`project-${item.id}-highlights`, "项目亮点", item.highlights, (value) => updateResumeProject(index, { ...item, highlights: value }), `项目：${item.title || "未填写"}；角色：${item.role || "未填写"}；项目摘要：${item.description || "未填写"}；技术栈：${item.tags.join("、") || "未填写"}`)}
                     isPolishing={polishingKey === `project-${item.id}-highlights`}
                   />
                   <Field label="技术栈，逗号分隔" value={item.tags.join(", ")} onChange={(value) => updateResumeProject(index, { ...item, tags: value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
@@ -873,6 +873,6 @@ function PreviewSection({ title, children }: { title: string; children: React.Re
   return <section className="mb-8"><h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h4><div className="space-y-5">{children}</div></section>;
 }
 
-function PreviewItem({ title, subtitle, period, description, highlights, tags }: { title?: string; subtitle?: string; period?: string; description?: string; highlights?: string[]; tags?: string[] }) {
-  return <div className="grid gap-2 sm:grid-cols-[150px_1fr]"><div className="text-xs font-medium uppercase text-muted-foreground">{period}</div><div><div className="font-semibold">{title}</div>{subtitle && <div className="text-sm text-primary">{subtitle}</div>}{description && <MarkdownText content={description} className="mt-1 text-muted-foreground" />}{highlights && highlights.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">{highlights.map((item) => <li key={item}><MarkdownText content={item} className="text-muted-foreground" /></li>)}</ul>}{tags && tags.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}</div></div>;
+function PreviewItem({ title, subtitle, period, description, highlights, tags }: { title?: string; subtitle?: string; period?: string; description?: string; highlights?: string; tags?: string[] }) {
+  return <div className="grid gap-2 sm:grid-cols-[150px_1fr]"><div className="text-xs font-medium uppercase text-muted-foreground">{period}</div><div><div className="font-semibold">{title}</div>{subtitle && <div className="text-sm text-primary">{subtitle}</div>}{description && <MarkdownText content={description} className="mt-1 text-muted-foreground" />}{highlights && <MarkdownText content={highlights} className="mt-2 text-muted-foreground" />}{tags && tags.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}</div></div>;
 }

@@ -140,7 +140,7 @@ ${text}
 要求：
 1. 只优化表达、结构和动作词，不新增事实。
 2. 不要编造数字、公司、职位、学历、时间、成果、技术栈。
-3. 如果原文是多行亮点，返回时仍保持多行，每行一条，不要合并成段落。
+3. 如果原文是亮点列表，返回时使用 Markdown 列表，不要合并成段落。
 4. 语言要具体、克制、可投递，避免“热爱学习、积极主动、熟悉各种技术”等空话。
 5. 保留原本的人称省略风格，不要写“我”。
 6. 如果原文已有 Markdown，请保留格式；可以少量使用 **加粗** 强调关键词，但不要使用标题、表格、图片或代码块。
@@ -175,7 +175,7 @@ ${JSON.stringify(projectPayload, null, 2)}
 1. 这是一份“求职简历”，不是项目介绍页。语言要像候选人的工作成果，避免“这是一个……项目”这种介绍腔。
 2. summary 写 90-150 字，结构为：目标岗位匹配度 + 核心技术栈 + 能独立完成的事情 + 代表项目。不要写“热爱学习”“积极主动”等空话。
 3. projects 必须基于已有项目素材，不要编造项目；项目较多时优先选择 3-5 个最能体现目标岗位能力的项目。description 写 35-70 字，说明项目定位、技术复杂度和个人负责范围。
-4. 每个项目 highlights 生成 3-4 条，每条 25-55 字，用“负责/设计/实现/封装/优化/接入/构建/沉淀”等动作开头，体现技术实现、工程化、跨端/数据/性能/部署/体验价值。
+4. 每个项目 highlights 返回一个 Markdown 文本块，包含 3-4 条以 "- " 开头的列表，每条 25-55 字，用“负责/设计/实现/封装/优化/接入/构建/沉淀”等动作开头，体现技术实现、工程化、跨端/数据/性能/部署/体验价值。
 5. 如果没有明确数据，不要编造百分比、用户量、耗时缩短等量化结果；可以写“提升维护性”“降低重复配置”“完善异常处理”等非虚构价值。
 6. skills 从项目 tags 和内容中归纳 3-4 个技能分组，每组 4-8 项，分组名要像简历：客户端开发、前端工程、后端与接口、工程化与工具链等。
 7. role 根据目标岗位和项目内容填写，如“跨端应用开发”“前端开发”“全栈开发”“AI 应用开发”；period 没有资料就返回空字符串。
@@ -191,7 +191,7 @@ ${JSON.stringify(projectPayload, null, 2)}
       "role": "string",
       "period": "string",
       "description": "string",
-      "highlights": ["string"],
+      "highlights": "- string\\n- string",
       "tags": ["string"],
       "link": "string",
       "showLink": true
@@ -244,7 +244,7 @@ function normalizeAiResume(value: AiResumeResponse, sourceProjects: Project[]): 
         role: String(project.role || ""),
         period: String(project.period || ""),
         description: String(project.description || source.description || ""),
-        highlights: normalizeStringList(project.highlights).slice(0, 4),
+        highlights: String(project.highlights || ""),
         tags: normalizeStringList(project.tags).slice(0, 10),
         link: String(project.link || source.link || source.github || ""),
         showLink: project.showLink !== false,

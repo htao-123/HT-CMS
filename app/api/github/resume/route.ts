@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { encodeGitHubContentsPath } from "@/lib/github-path";
-import type { ResumeData, ResumeSectionId } from "@/types";
+import type { ResumeData, ResumeItem, ResumeProject, ResumeSectionId, Skill } from "@/types";
 
 interface BlogConfig {
   repo: string;
@@ -33,11 +33,51 @@ function normalizeResume(value: unknown): ResumeData {
     : defaultSectionOrder;
   return {
     summary: typeof resume.summary === "string" ? resume.summary : "",
-    experience: Array.isArray(resume.experience) ? resume.experience : [],
-    projects: Array.isArray(resume.projects) ? resume.projects : [],
-    education: Array.isArray(resume.education) ? resume.education : [],
-    skills: Array.isArray(resume.skills) ? resume.skills : [],
+    experience: Array.isArray(resume.experience) ? resume.experience.map(normalizeResumeItem) : [],
+    projects: Array.isArray(resume.projects) ? resume.projects.map(normalizeResumeProject) : [],
+    education: Array.isArray(resume.education) ? resume.education.map(normalizeResumeItem) : [],
+    skills: Array.isArray(resume.skills) ? resume.skills.map(normalizeSkill) : [],
     sectionOrder,
+  };
+}
+
+function normalizeResumeItem(value: unknown): ResumeItem {
+  const item = value && typeof value === "object" ? value as Partial<ResumeItem> : {};
+  return {
+    id: typeof item.id === "string" ? item.id : "",
+    title: typeof item.title === "string" ? item.title : "",
+    subtitle: typeof item.subtitle === "string" ? item.subtitle : "",
+    period: typeof item.period === "string" ? item.period : "",
+    description: typeof item.description === "string" ? item.description : "",
+    location: typeof item.location === "string" ? item.location : "",
+    highlights: typeof item.highlights === "string" ? item.highlights : "",
+    tags: Array.isArray(item.tags) ? item.tags.filter((tag): tag is string => typeof tag === "string") : [],
+  };
+}
+
+function normalizeResumeProject(value: unknown): ResumeProject {
+  const project = value && typeof value === "object" ? value as Partial<ResumeProject> : {};
+  return {
+    id: typeof project.id === "string" ? project.id : "",
+    sourceType: project.sourceType === "linked" ? "linked" : "custom",
+    projectId: typeof project.projectId === "string" ? project.projectId : undefined,
+    title: typeof project.title === "string" ? project.title : "",
+    role: typeof project.role === "string" ? project.role : "",
+    period: typeof project.period === "string" ? project.period : "",
+    description: typeof project.description === "string" ? project.description : "",
+    highlights: typeof project.highlights === "string" ? project.highlights : "",
+    tags: Array.isArray(project.tags) ? project.tags.filter((tag): tag is string => typeof tag === "string") : [],
+    link: typeof project.link === "string" ? project.link : "",
+    showLink: project.showLink !== false,
+  };
+}
+
+function normalizeSkill(value: unknown): Skill {
+  const skill = value && typeof value === "object" ? value as Partial<Skill> : {};
+  return {
+    id: typeof skill.id === "string" ? skill.id : "",
+    category: typeof skill.category === "string" ? skill.category : "",
+    items: Array.isArray(skill.items) ? skill.items.filter((item): item is string => typeof item === "string") : [],
   };
 }
 
