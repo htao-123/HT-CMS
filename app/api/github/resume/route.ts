@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { encodeGitHubContentsPath } from "@/lib/github-path";
-import type { ResumeData } from "@/types";
+import type { ResumeData, ResumeSectionId } from "@/types";
 
 interface BlogConfig {
   repo: string;
@@ -14,7 +14,10 @@ const defaultResume: ResumeData = {
   projects: [],
   education: [],
   skills: [],
+  sectionOrder: ["summary", "experience", "projects", "skills", "education"],
 };
+
+const defaultSectionOrder: ResumeSectionId[] = ["summary", "experience", "projects", "skills", "education"];
 
 function toBase64(content: string): string {
   return Buffer.from(content).toString("base64");
@@ -22,12 +25,19 @@ function toBase64(content: string): string {
 
 function normalizeResume(value: unknown): ResumeData {
   const resume = value && typeof value === "object" ? value as Partial<ResumeData> : {};
+  const sectionOrder = Array.isArray(resume.sectionOrder)
+    ? [
+        ...resume.sectionOrder.filter((section): section is ResumeSectionId => defaultSectionOrder.includes(section as ResumeSectionId)),
+        ...defaultSectionOrder.filter((section) => !resume.sectionOrder?.includes(section)),
+      ]
+    : defaultSectionOrder;
   return {
     summary: typeof resume.summary === "string" ? resume.summary : "",
     experience: Array.isArray(resume.experience) ? resume.experience : [],
     projects: Array.isArray(resume.projects) ? resume.projects : [],
     education: Array.isArray(resume.education) ? resume.education : [],
     skills: Array.isArray(resume.skills) ? resume.skills : [],
+    sectionOrder,
   };
 }
 

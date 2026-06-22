@@ -5,7 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink, Mail } from "lucide-react";
-import type { ResumeItem, ResumeProject } from "@/types";
+import type { ResumeItem, ResumeProject, ResumeSectionId } from "@/types";
+
+const defaultSectionOrder: ResumeSectionId[] = ["summary", "experience", "projects", "skills", "education"];
+const sectionLabels: Record<ResumeSectionId, string> = {
+  summary: "个人简介",
+  experience: "工作经历",
+  projects: "项目经历",
+  skills: "技能特长",
+  education: "教育背景",
+};
+
+function normalizeSectionOrder(order?: ResumeSectionId[]) {
+  const valid = Array.isArray(order)
+    ? order.filter((section): section is ResumeSectionId => defaultSectionOrder.includes(section))
+    : [];
+  return [...valid, ...defaultSectionOrder.filter((section) => !valid.includes(section))];
+}
 
 export default function ResumePage() {
   const { profile, resume } = useData();
@@ -13,6 +29,70 @@ export default function ResumePage() {
   const visibleProjects = resume.projects.filter(hasResumeProjectContent);
   const visibleEducation = resume.education.filter(hasResumeItemContent);
   const visibleSkills = resume.skills.filter((skill) => skill.category.trim() && skill.items.some((item) => item.trim()));
+  const orderedSections = normalizeSectionOrder(resume.sectionOrder);
+
+  const renderSection = (section: ResumeSectionId) => {
+    if (section === "summary") {
+      if (!(resume.summary || profile.bio)) return null;
+      return (
+        <section key={section} className="mb-10 print:mb-5">
+          <SectionTitle title={sectionLabels[section]} />
+          <p className="leading-8 text-muted-foreground print:text-sm print:leading-6">
+            {resume.summary || profile.bio}
+          </p>
+        </section>
+      );
+    }
+
+    if (section === "experience") {
+      return (
+        <ResumeSection key={section} title={sectionLabels[section]} empty={!visibleExperience.length}>
+          {visibleExperience.map((item) => (
+            <ResumeTimelineItem key={item.id} item={item} />
+          ))}
+        </ResumeSection>
+      );
+    }
+
+    if (section === "projects") {
+      return (
+        <ResumeSection key={section} title={sectionLabels[section]} empty={!visibleProjects.length}>
+          {visibleProjects.map((project) => (
+            <ProjectItem key={project.id} project={project} />
+          ))}
+        </ResumeSection>
+      );
+    }
+
+    if (section === "skills") {
+      return (
+        <ResumeSection key={section} title={sectionLabels[section]} empty={!visibleSkills.length}>
+          <div className="grid gap-4 md:grid-cols-2 print:grid-cols-2 print:gap-3">
+            {visibleSkills.map((skillGroup) => (
+              <div key={skillGroup.id} className="rounded-lg border p-5 print:border-0 print:p-0">
+                <h3 className="mb-3 font-semibold">{skillGroup.category}</h3>
+                <div className="flex flex-wrap gap-2">
+                  {skillGroup.items.filter((skill) => skill.trim()).map((skill) => (
+                    <Badge key={skill} variant="secondary" className="print:border print:bg-transparent">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ResumeSection>
+      );
+    }
+
+    return (
+      <ResumeSection key={section} title={sectionLabels[section]} empty={!visibleEducation.length}>
+        {visibleEducation.map((item) => (
+          <ResumeTimelineItem key={item.id} item={item} />
+        ))}
+      </ResumeSection>
+    );
+  };
 
   return (
     <div className="container min-h-screen px-4 py-10 print:py-0">
@@ -54,49 +134,7 @@ export default function ResumePage() {
           </div>
         </header>
 
-        {(resume.summary || profile.bio) && (
-          <section className="mb-10 print:mb-5">
-            <SectionTitle title="个人简介" />
-            <p className="leading-8 text-muted-foreground print:text-sm print:leading-6">
-              {resume.summary || profile.bio}
-            </p>
-          </section>
-        )}
-
-        <ResumeSection title="工作经历" empty={!visibleExperience.length}>
-          {visibleExperience.map((item) => (
-            <ResumeTimelineItem key={item.id} item={item} />
-          ))}
-        </ResumeSection>
-
-        <ResumeSection title="项目经历" empty={!visibleProjects.length}>
-          {visibleProjects.map((project) => (
-            <ProjectItem key={project.id} project={project} />
-          ))}
-        </ResumeSection>
-
-        <ResumeSection title="技能特长" empty={!visibleSkills.length}>
-          <div className="grid gap-4 md:grid-cols-2 print:grid-cols-2 print:gap-3">
-            {visibleSkills.map((skillGroup) => (
-              <div key={skillGroup.id} className="rounded-lg border p-5 print:border-0 print:p-0">
-                <h3 className="mb-3 font-semibold">{skillGroup.category}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {skillGroup.items.filter((skill) => skill.trim()).map((skill) => (
-                    <Badge key={skill} variant="secondary" className="print:border print:bg-transparent">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </ResumeSection>
-
-        <ResumeSection title="教育背景" empty={!visibleEducation.length}>
-          {visibleEducation.map((item) => (
-            <ResumeTimelineItem key={item.id} item={item} />
-          ))}
-        </ResumeSection>
+        {orderedSections.map(renderSection)}
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { ResumeData, ResumeItem, ResumeProject, Skill } from "@/types";
+import type { ResumeData, ResumeItem, ResumeProject, ResumeSectionId, Skill } from "@/types";
 import { ArrowDown, ArrowUp, Eye, Github, Linkedin, Plus, Save, Sparkles, Trash2, User, WandSparkles, X as TwitterIcon } from "lucide-react";
 
 function createId(prefix: string) {
@@ -32,6 +32,22 @@ function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
   const next = [...items];
   [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
   return next;
+}
+
+const defaultSectionOrder: ResumeSectionId[] = ["summary", "experience", "projects", "skills", "education"];
+const sectionLabels: Record<ResumeSectionId, string> = {
+  summary: "个人简介",
+  experience: "工作经历",
+  projects: "项目经历",
+  skills: "技能分组",
+  education: "教育背景",
+};
+
+function normalizeSectionOrder(order?: ResumeSectionId[]) {
+  const valid = Array.isArray(order)
+    ? order.filter((section): section is ResumeSectionId => defaultSectionOrder.includes(section))
+    : [];
+  return [...valid, ...defaultSectionOrder.filter((section) => !valid.includes(section))];
 }
 
 function getProjectLink(project: { link?: string; github?: string }) {
@@ -158,6 +174,7 @@ function cleanResume(resume: ResumeData): ResumeData {
     skills: resume.skills
       .map((skill) => ({ ...skill, items: uniq(skill.items.map(normalizeTechName)) }))
       .filter((skill) => skill.category.trim() && skill.items.length > 0),
+    sectionOrder: normalizeSectionOrder(resume.sectionOrder),
   };
 }
 
@@ -232,6 +249,12 @@ export function AdminProfile() {
 
   const setResumeField = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) => {
     setResumeForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const moveSection = (section: ResumeSectionId, direction: -1 | 1) => {
+    const order = normalizeSectionOrder(resumeForm.sectionOrder);
+    const index = order.indexOf(section);
+    setResumeField("sectionOrder", moveItem(order, index, direction));
   };
 
   const updateExperience = (index: number, item: ResumeItem) => {
@@ -309,6 +332,7 @@ export function AdminProfile() {
       summary: draft.summary || current.summary,
       projects: draft.projects,
       skills: draft.skills,
+      sectionOrder: normalizeSectionOrder(current.sectionOrder),
     }));
   };
 
@@ -399,6 +423,54 @@ export function AdminProfile() {
     previewResume.experience.length ? `${previewResume.experience.length} 段经历` : "",
     previewResume.education.length ? `${previewResume.education.length} 段教育` : "",
   ].filter(Boolean);
+  const orderedSections = normalizeSectionOrder(previewResume.sectionOrder);
+  const renderPreviewModule = (section: ResumeSectionId) => {
+    if (section === "summary") {
+      return (
+        <PreviewSection key={section} title="简介">
+          <p className="text-sm leading-7 text-muted-foreground">{previewResume.summary || profileForm.bio || "暂无简介"}</p>
+        </PreviewSection>
+      );
+    }
+    if (section === "experience" && previewResume.experience.length > 0) {
+      return (
+        <PreviewSection key={section} title="工作经历">
+          {previewResume.experience.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}
+        </PreviewSection>
+      );
+    }
+    if (section === "projects" && previewResume.projects.length > 0) {
+      return (
+        <PreviewSection key={section} title="项目经历">
+          {previewResume.projects.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.role} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}
+        </PreviewSection>
+      );
+    }
+    if (section === "skills" && previewResume.skills.length > 0) {
+      return (
+        <PreviewSection key={section} title="技能分组">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {previewResume.skills.map((group) => (
+              <div key={group.id} className="rounded-lg border p-4">
+                <div className="font-semibold">{group.category}</div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {group.items.map((item) => <Badge key={item} variant="secondary">{item}</Badge>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </PreviewSection>
+      );
+    }
+    if (section === "education" && previewResume.education.length > 0) {
+      return (
+        <PreviewSection key={section} title="教育背景">
+          {previewResume.education.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} />)}
+        </PreviewSection>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -616,6 +688,31 @@ export function AdminProfile() {
               </Card>
             </div>
 
+            <Card>
+              <CardHeader>
+                <CardTitle>模块顺序</CardTitle>
+                <p className="text-sm text-muted-foreground">这里控制预览和公开简历里的展示顺序。</p>
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                {normalizeSectionOrder(resumeForm.sectionOrder).map((section, index, order) => (
+                  <div key={section} className="flex items-center justify-between rounded-lg border bg-background p-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-sm font-medium text-muted-foreground">{index + 1}</span>
+                      <span className="font-medium">{sectionLabels[section]}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => moveSection(section, -1)} disabled={index === 0} title="上移">
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => moveSection(section, 1)} disabled={index === order.length - 1} title="下移">
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
             <section className="space-y-4">
               <SectionHeader title="工作经历" action="添加经历" onAdd={addExperience} />
               <div className="grid gap-4">
@@ -714,10 +811,7 @@ export function AdminProfile() {
                 <div><h3 className="text-3xl font-bold">{profileForm.name || "姓名"}</h3><p className="text-muted-foreground">{profileForm.title || "职位"}</p></div>
                 <p className="text-sm text-muted-foreground">{profileForm.email}</p>
               </div>
-              <PreviewSection title="简介"><p className="text-sm leading-7 text-muted-foreground">{previewResume.summary || profileForm.bio || "暂无简介"}</p></PreviewSection>
-              <PreviewSection title="工作经历">{previewResume.experience.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}</PreviewSection>
-              <PreviewSection title="项目经历">{previewResume.projects.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.role} period={item.period} description={item.description} highlights={item.highlights} tags={item.tags} />)}</PreviewSection>
-              <PreviewSection title="教育背景">{previewResume.education.map((item) => <PreviewItem key={item.id} title={item.title} subtitle={item.subtitle} period={item.period} description={item.description} />)}</PreviewSection>
+              {orderedSections.map(renderPreviewModule)}
             </CardContent>
           </Card>
         </TabsContent>

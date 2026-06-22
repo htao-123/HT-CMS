@@ -67,7 +67,10 @@ export interface ResumeData {
   projects: ResumeProject[];
   education: ResumeItem[];
   skills: Skill[];
+  sectionOrder: ResumeSectionId[];
 }
+
+export type ResumeSectionId = 'summary' | 'experience' | 'projects' | 'skills' | 'education';
 
 export interface UserProfile {
   name: string;

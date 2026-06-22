@@ -81,6 +81,7 @@ const defaultResume: ResumeData = {
   projects: [],
   education: [],
   skills: [],
+  sectionOrder: ["summary", "experience", "projects", "skills", "education"],
 };
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
