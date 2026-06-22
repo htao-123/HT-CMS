@@ -125,20 +125,36 @@ function groupSkills(tags: string[]): Skill[] {
   ];
 
   const skillGroups = groups
-    .map((group) => ({
-      id: group.id,
-      category: group.category,
-      content: normalizedTags.filter((tag) => group.match.includes(tag)).slice(0, 8).join("、"),
-    }))
+    .map((group) => {
+      const matchedTags = normalizedTags.filter((tag) => group.match.includes(tag)).slice(0, 8);
+      return {
+        id: group.id,
+        category: group.category,
+        content: formatSkillContent(matchedTags),
+      };
+    })
     .filter((group) => group.content.length > 0);
 
-  const used = new Set(skillGroups.flatMap((group) => group.content.split("、")));
+  const used = new Set(skillGroups.flatMap((group) => parseSkillContent(group.content)));
   const others = normalizedTags.filter((tag) => !used.has(tag)).slice(0, 8);
   if (others.length > 0) {
-    skillGroups.push({ id: "skill-other", category: "其他关键词", content: others.join("、") });
+    skillGroups.push({ id: "skill-other", category: "其他关键词", content: formatSkillContent(others) });
   }
 
   return skillGroups;
+}
+
+function formatSkillContent(tags: string[]) {
+  if (!tags.length) return "";
+  return `- ${tags.join("、")}`;
+}
+
+function parseSkillContent(content: string) {
+  return content
+    .replace(/^- /gm, "")
+    .split(/[、,，/；;\n]+/)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
 }
 
 function cleanResume(resume: ResumeData): ResumeData {
