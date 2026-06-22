@@ -36,7 +36,7 @@ export default function ResumePage() {
     if (section === "summary") {
       if (!(resume.summary || profile.bio)) return null;
       return (
-        <section key={section} className="mb-8 print:mb-4">
+        <section key={section} className="mb-8 break-inside-avoid print:mb-4">
           <SectionTitle title={sectionLabels[section]} />
           <MarkdownText content={resume.summary || profile.bio} className="text-slate-600 print:leading-6" />
         </section>
@@ -68,7 +68,7 @@ export default function ResumePage() {
         <ResumeSection key={section} title={sectionLabels[section]} empty={!visibleSkills.length}>
           <div className="divide-y divide-slate-200 border-y border-slate-200">
             {visibleSkills.map((skillGroup) => (
-              <div key={skillGroup.id} className="grid gap-2 py-3 sm:grid-cols-[132px_1fr] print:grid-cols-[110px_1fr] print:py-2">
+              <div key={skillGroup.id} className="grid break-inside-avoid gap-2 py-3 sm:grid-cols-[132px_1fr] print:grid-cols-[110px_1fr] print:py-2">
                 <h3 className="text-sm font-semibold leading-6 text-slate-950">{skillGroup.category}</h3>
                 <MarkdownText content={skillGroup.content} className="text-slate-600 print:leading-6" />
               </div>
@@ -88,7 +88,7 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-8 dark:bg-background print:bg-white print:px-0 print:py-0">
+    <div className="min-h-screen bg-slate-100 px-4 py-8 dark:bg-background print:min-h-0 print:bg-white print:px-0 print:py-0">
       <div className="mx-auto max-w-[860px] bg-white px-6 py-8 text-slate-950 shadow-sm ring-1 ring-slate-200 sm:px-10 sm:py-10 print:max-w-none print:px-0 print:py-0 print:shadow-none print:ring-0">
         <header className="mb-8 border-b border-slate-200 pb-6 print:mb-4 print:pb-4">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
@@ -166,8 +166,10 @@ function ResumeSection({
   if (empty) return null;
 
   return (
-    <section className="mb-8 print:mb-4">
-      <SectionTitle title={title} />
+    <section className="mb-8 break-inside-auto print:mb-4">
+      <div className="break-after-avoid">
+        <SectionTitle title={title} />
+      </div>
       <div className="space-y-5 print:space-y-3">{children}</div>
     </section>
   );
@@ -183,7 +185,7 @@ function SectionTitle({ title }: { title: string }) {
 
 function ResumeTimelineItem({ item }: { item: ResumeItem }) {
   return (
-    <article className="grid gap-3 border-b border-slate-200 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[150px_1fr] print:grid-cols-[115px_1fr] print:gap-3 print:pb-3">
+    <article className="grid break-inside-avoid gap-3 border-b border-slate-200 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[150px_1fr] print:grid-cols-[115px_1fr] print:gap-3 print:pb-3">
       <div className="text-xs font-medium leading-6 text-slate-500">
         <div>{item.period}</div>
         {item.location && <div>{item.location}</div>}
@@ -203,7 +205,7 @@ function ResumeTimelineItem({ item }: { item: ResumeItem }) {
 
 function ProjectItem({ project }: { project: ResumeProject }) {
   return (
-    <article className="grid gap-3 border-b border-slate-200 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[150px_1fr] print:grid-cols-[115px_1fr] print:gap-3 print:pb-3">
+    <article className="grid break-inside-avoid gap-3 border-b border-slate-200 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[150px_1fr] print:grid-cols-[115px_1fr] print:gap-3 print:pb-3">
       <div className="text-xs font-medium leading-6 text-slate-500">{project.period}</div>
       <div>
         <div className="flex flex-wrap items-center gap-2">

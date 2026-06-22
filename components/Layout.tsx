@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useData } from "@/lib/data-context";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
-import { Menu, X, Code2, ShieldCheck } from "lucide-react";
+import { Menu, X, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -25,7 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b print:hidden">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link
             href="/"
@@ -105,9 +105,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="flex-1 pt-16">{children}</main>
+      <main className="flex-1 pt-16 print:pt-0">{children}</main>
 
-      <footer className="border-t py-8 bg-muted/30">
+      <footer className="border-t py-8 bg-muted/30 print:hidden">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} HT-CMS. Powered by GitHub.</p>
         </div>
