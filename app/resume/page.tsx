@@ -66,17 +66,11 @@ export default function ResumePage() {
     if (section === "skills") {
       return (
         <ResumeSection key={section} title={sectionLabels[section]} empty={!visibleSkills.length}>
-          <div className="space-y-3 print:space-y-2">
+          <div className="divide-y divide-slate-200 border-y border-slate-200">
             {visibleSkills.map((skillGroup) => (
-              <div key={skillGroup.id} className="grid gap-2 sm:grid-cols-[132px_1fr] print:grid-cols-[110px_1fr]">
-                <h3 className="text-sm font-semibold text-slate-950">{skillGroup.category}</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {skillGroup.items.filter((skill) => skill.trim()).map((skill) => (
-                    <Badge key={skill} variant="secondary" className="rounded-md border-slate-200 bg-slate-100 font-medium text-slate-700 print:border print:bg-transparent">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
+              <div key={skillGroup.id} className="grid gap-2 py-3 sm:grid-cols-[132px_1fr] print:grid-cols-[110px_1fr] print:py-2">
+                <h3 className="text-sm font-semibold leading-6 text-slate-950">{skillGroup.category}</h3>
+                <SkillKeywordLine skills={skillGroup.items} />
               </div>
             ))}
           </div>
@@ -157,6 +151,22 @@ function hasResumeProjectContent(project: ResumeProject) {
     project.description.trim() ||
     project.highlights.trim() ||
     project.tags.some((tag) => tag.trim())
+  );
+}
+
+function SkillKeywordLine({ skills }: { skills: string[] }) {
+  const visibleSkills = skills.filter((skill) => skill.trim());
+  if (!visibleSkills.length) return null;
+
+  return (
+    <p className="flex flex-wrap gap-x-2 gap-y-1 text-sm leading-6 text-slate-600">
+      {visibleSkills.map((skill, index) => (
+        <span key={`${skill}-${index}`} className="inline-flex items-center gap-2">
+          {index > 0 && <span className="text-slate-300">/</span>}
+          <span>{skill}</span>
+        </span>
+      ))}
+    </p>
   );
 }
 

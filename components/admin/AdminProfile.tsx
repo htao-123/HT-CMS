@@ -112,18 +112,23 @@ function groupSkills(tags: string[]): Skill[] {
   const groups = [
     {
       id: "skill-client",
-      category: "客户端与跨端开发",
+      category: "跨端与客户端",
       match: ["Dart", "Flutter", "Kotlin", "Swift", "C++", "CMake", "Objective-C"],
     },
     {
       id: "skill-frontend",
-      category: "前端开发",
-      match: ["React", "Vue", "Next.js", "TypeScript", "JavaScript", "Tailwind CSS"],
+      category: "前端框架与语言",
+      match: ["React", "Vue", "Next.js", "TypeScript", "JavaScript"],
     },
     {
       id: "skill-backend",
-      category: "后端与工程化",
-      match: ["Python", "FastAPI", "Node.js", "Express", "Rust", "Shell"],
+      category: "后端与接口",
+      match: ["Python", "FastAPI", "Node.js", "Express", "Rust"],
+    },
+    {
+      id: "skill-engineering",
+      category: "工程化与部署",
+      match: ["Tailwind CSS", "Shell", "Docker", "GitHub Actions", "CMake"],
     },
   ];
 
@@ -138,7 +143,7 @@ function groupSkills(tags: string[]): Skill[] {
   const used = new Set(skillGroups.flatMap((group) => group.items));
   const others = normalizedTags.filter((tag) => !used.has(tag)).slice(0, 8);
   if (others.length > 0) {
-    skillGroups.push({ id: "skill-other", category: "其他技术", items: others });
+    skillGroups.push({ id: "skill-other", category: "其他关键词", items: others });
   }
 
   return skillGroups;
@@ -485,13 +490,11 @@ export function AdminProfile() {
     if (section === "skills" && previewResume.skills.length > 0) {
       return (
         <PreviewSection key={section} title="技能分组">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="divide-y rounded-lg border bg-background">
             {previewResume.skills.map((group) => (
-              <div key={group.id} className="rounded-lg border p-4">
-                <div className="font-semibold">{group.category}</div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {group.items.map((item) => <Badge key={item} variant="secondary">{item}</Badge>)}
-                </div>
+              <div key={group.id} className="grid gap-2 p-3 sm:grid-cols-[150px_1fr]">
+                <div className="text-sm font-semibold">{group.category}</div>
+                <SkillPreviewLine items={group.items} />
               </div>
             ))}
           </div>
@@ -787,13 +790,16 @@ export function AdminProfile() {
 
             <section className="space-y-4">
               <SectionHeader title="技能分组" action="添加分组" onAdd={addSkillGroup} />
-              <div className="grid gap-4 md:grid-cols-2">
+              <p className="text-sm text-muted-foreground">
+                推荐按“类别 + 关键词”维护，优先写可被项目支撑的硬技能；不建议写熟练度、百分比或进度条。
+              </p>
+              <div className="grid gap-4">
             {resumeForm.skills.map((group, index) => (
               <Card key={group.id}>
-                <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{group.category}</CardTitle>{renderItemControls(() => setResumeField("skills", moveItem(resumeForm.skills, index, -1)), () => setResumeField("skills", moveItem(resumeForm.skills, index, 1)), () => setResumeField("skills", resumeForm.skills.filter((_, i) => i !== index)))}</CardHeader>
-                <CardContent className="grid gap-4">
+                <CardHeader className="flex-row items-center justify-between space-y-0"><CardTitle className="text-base">{group.category || "技能分组"} · {group.items.length} 项</CardTitle>{renderItemControls(() => setResumeField("skills", moveItem(resumeForm.skills, index, -1)), () => setResumeField("skills", moveItem(resumeForm.skills, index, 1)), () => setResumeField("skills", resumeForm.skills.filter((_, i) => i !== index)))}</CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-[220px_1fr]">
                   <Field label="分组名" value={group.category} onChange={(value) => updateSkillGroup(index, { ...group, category: value })} />
-                  <TextField label="技能，一行一项" value={listToLines(group.items)} onChange={(value) => updateSkillGroup(index, { ...group, items: linesToList(value) })} />
+                  <TextField label="技能关键词（每行一项）" value={listToLines(group.items)} onChange={(value) => updateSkillGroup(index, { ...group, items: linesToList(value) })} />
                 </CardContent>
               </Card>
             ))}
@@ -824,6 +830,22 @@ function SectionHeader({ title, action, onAdd }: { title: string; action: string
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <div className="grid gap-2"><Label>{label}</Label><Input value={value} onChange={(e) => onChange(e.target.value)} /></div>;
+}
+
+function SkillPreviewLine({ items }: { items: string[] }) {
+  const visibleItems = items.filter((item) => item.trim());
+  if (!visibleItems.length) return null;
+
+  return (
+    <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm leading-6 text-muted-foreground">
+      {visibleItems.map((item, index) => (
+        <span key={`${item}-${index}`} className="inline-flex items-center gap-2">
+          {index > 0 && <span className="text-border">/</span>}
+          <span>{item}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function TextField({
