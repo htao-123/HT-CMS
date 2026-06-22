@@ -2,7 +2,6 @@
 
 import { useData } from "@/lib/data-context";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink, Mail } from "lucide-react";
 import type { ResumeItem, ResumeProject, ResumeSectionId } from "@/types";
@@ -30,14 +29,15 @@ export default function ResumePage() {
   const visibleEducation = resume.education.filter(hasResumeItemContent);
   const visibleSkills = resume.skills.filter((skill) => skill.category.trim() && skill.items.some((item) => item.trim()));
   const orderedSections = normalizeSectionOrder(resume.sectionOrder);
+  const contactItems = [profile.email, profile.socials.github, profile.socials.linkedin].filter(Boolean);
 
   const renderSection = (section: ResumeSectionId) => {
     if (section === "summary") {
       if (!(resume.summary || profile.bio)) return null;
       return (
-        <section key={section} className="mb-10 print:mb-5">
+        <section key={section} className="mb-8 print:mb-4">
           <SectionTitle title={sectionLabels[section]} />
-          <p className="leading-8 text-muted-foreground print:text-sm print:leading-6">
+          <p className="text-sm leading-7 text-slate-600 print:leading-6">
             {resume.summary || profile.bio}
           </p>
         </section>
@@ -67,13 +67,13 @@ export default function ResumePage() {
     if (section === "skills") {
       return (
         <ResumeSection key={section} title={sectionLabels[section]} empty={!visibleSkills.length}>
-          <div className="grid gap-4 md:grid-cols-2 print:grid-cols-2 print:gap-3">
+          <div className="space-y-3 print:space-y-2">
             {visibleSkills.map((skillGroup) => (
-              <div key={skillGroup.id} className="rounded-lg border p-5 print:border-0 print:p-0">
-                <h3 className="mb-3 font-semibold">{skillGroup.category}</h3>
-                <div className="flex flex-wrap gap-2">
+              <div key={skillGroup.id} className="grid gap-2 sm:grid-cols-[132px_1fr] print:grid-cols-[110px_1fr]">
+                <h3 className="text-sm font-semibold text-slate-950">{skillGroup.category}</h3>
+                <div className="flex flex-wrap gap-1.5">
                   {skillGroup.items.filter((skill) => skill.trim()).map((skill) => (
-                    <Badge key={skill} variant="secondary" className="print:border print:bg-transparent">
+                    <Badge key={skill} variant="secondary" className="rounded-md border-slate-200 bg-slate-100 font-medium text-slate-700 print:border print:bg-transparent">
                       {skill}
                     </Badge>
                   ))}
@@ -95,46 +95,44 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="container min-h-screen px-4 py-10 print:py-0">
-      <div className="mx-auto max-w-4xl print:max-w-none">
-        <header className="mb-10 flex flex-col gap-6 border-b pb-8 md:flex-row md:items-end md:justify-between print:mb-5 print:pb-4">
-          <div className="flex items-start gap-5">
-            {profile.avatarUrl && (
-              <img
-                src={profile.avatarUrl}
-                alt={profile.name}
-                className="h-20 w-20 rounded-2xl object-cover print:hidden"
-              />
-            )}
+    <div className="min-h-screen bg-slate-100 px-4 py-8 print:bg-white print:px-0 print:py-0">
+      <div className="mx-auto max-w-[860px] bg-white px-6 py-8 text-slate-950 shadow-sm ring-1 ring-slate-200 sm:px-10 sm:py-10 print:max-w-none print:px-0 print:py-0 print:shadow-none print:ring-0">
+        <header className="mb-8 border-b border-slate-200 pb-6 print:mb-4 print:pb-4">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div>
-              <h1 className="font-display text-4xl font-bold print:text-3xl">
+              <h1 className="text-3xl font-bold leading-tight text-slate-950 print:text-2xl">
                 {profile.name || "未填写姓名"}
               </h1>
-              <p className="mt-2 text-xl text-muted-foreground print:text-base">
+              <p className="mt-2 text-base font-medium text-slate-600 print:text-sm">
                 {profile.title || "未填写职位"}
               </p>
-              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {profile.email && <span>{profile.email}</span>}
-                {profile.socials.github && <span>{profile.socials.github}</span>}
-                {profile.socials.linkedin && <span>{profile.socials.linkedin}</span>}
+              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600 print:text-xs">
+                {contactItems.map((item, index) => (
+                  <span key={item} className="inline-flex items-center gap-2">
+                    {index > 0 && <span className="text-slate-300">/</span>}
+                    <span>{item}</span>
+                  </span>
+                ))}
               </div>
             </div>
-          </div>
-          <div className="flex gap-3 print:hidden">
-            <Button variant="outline" onClick={() => window.print()}>
-              <Download className="mr-2 h-4 w-4" /> 打印简历
-            </Button>
-            {profile.email && (
-              <Button asChild>
-                <a href={`mailto:${profile.email}`}>
-                  <Mail className="mr-2 h-4 w-4" /> 联系我
-                </a>
+            <div className="flex gap-2 print:hidden">
+              <Button variant="outline" size="sm" className="border-slate-300 bg-white text-slate-900 hover:bg-slate-100" onClick={() => window.print()}>
+                <Download className="h-4 w-4" /> 打印
               </Button>
-            )}
+              {profile.email && (
+                <Button size="sm" className="bg-slate-900 text-white hover:bg-slate-800" asChild>
+                  <a href={`mailto:${profile.email}`}>
+                    <Mail className="h-4 w-4" /> 联系
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
         </header>
 
-        {orderedSections.map(renderSection)}
+        <main>
+          {orderedSections.map(renderSection)}
+        </main>
       </div>
     </div>
   );
@@ -175,40 +173,39 @@ function ResumeSection({
   if (empty) return null;
 
   return (
-    <section className="mb-10 print:mb-5">
+    <section className="mb-8 print:mb-4">
       <SectionTitle title={title} />
-      <div className="space-y-7 print:space-y-4">{children}</div>
+      <div className="space-y-5 print:space-y-3">{children}</div>
     </section>
   );
 }
 
 function SectionTitle({ title }: { title: string }) {
   return (
-    <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-bold print:mb-3 print:text-lg">
+    <h2 className="mb-4 border-b border-slate-200 pb-2 text-sm font-bold uppercase text-slate-950 print:mb-2 print:pb-1">
       {title}
-      <Separator className="flex-1" />
     </h2>
   );
 }
 
 function ResumeTimelineItem({ item }: { item: ResumeItem }) {
   return (
-    <article className="grid gap-3 md:grid-cols-[180px_1fr] print:grid-cols-[130px_1fr] print:gap-3">
-      <div className="text-sm font-medium text-muted-foreground">
+    <article className="grid gap-3 border-b border-slate-200 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[150px_1fr] print:grid-cols-[115px_1fr] print:gap-3 print:pb-3">
+      <div className="text-xs font-medium leading-6 text-slate-500">
         <div>{item.period}</div>
-        {item.location && <div className="mt-1 text-xs">{item.location}</div>}
+        {item.location && <div>{item.location}</div>}
       </div>
       <div>
-        <h3 className="text-lg font-bold print:text-base">{item.title}</h3>
-        {item.subtitle && <div className="font-medium text-primary">{item.subtitle}</div>}
+        <h3 className="text-base font-bold leading-6 text-slate-950">{item.title}</h3>
+        {item.subtitle && <div className="text-sm font-medium text-slate-700">{item.subtitle}</div>}
         {item.description && (
-          <p className="mt-2 text-sm leading-7 text-muted-foreground print:leading-6">
+          <p className="mt-2 text-sm leading-6 text-slate-600">
             {item.description}
           </p>
         )}
         {item.highlights && item.highlights.length > 0 && (
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-7 text-muted-foreground print:leading-6">
-            {item.highlights.map((highlight) => (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
+            {item.highlights.filter(Boolean).map((highlight) => (
               <li key={highlight}>{highlight}</li>
             ))}
           </ul>
@@ -221,31 +218,31 @@ function ResumeTimelineItem({ item }: { item: ResumeItem }) {
 
 function ProjectItem({ project }: { project: ResumeProject }) {
   return (
-    <article className="grid gap-3 md:grid-cols-[180px_1fr] print:grid-cols-[130px_1fr] print:gap-3">
-      <div className="text-sm font-medium text-muted-foreground">{project.period}</div>
+    <article className="grid gap-3 border-b border-slate-200 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[150px_1fr] print:grid-cols-[115px_1fr] print:gap-3 print:pb-3">
+      <div className="text-xs font-medium leading-6 text-slate-500">{project.period}</div>
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-lg font-bold print:text-base">{project.title}</h3>
+          <h3 className="text-base font-bold leading-6 text-slate-950">{project.title}</h3>
           {project.showLink && project.link && (
             <a
               href={project.link}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-primary print:text-muted-foreground"
+              className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 underline-offset-4 hover:underline print:text-slate-500"
             >
               链接 <ExternalLink className="h-3 w-3 print:hidden" />
             </a>
           )}
         </div>
-        {project.role && <div className="font-medium text-primary">{project.role}</div>}
+        {project.role && <div className="text-sm font-medium text-slate-700">{project.role}</div>}
         {project.description && (
-          <p className="mt-2 text-sm leading-7 text-muted-foreground print:leading-6">
+          <p className="mt-2 text-sm leading-6 text-slate-600">
             {project.description}
           </p>
         )}
         {project.highlights.length > 0 && (
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-7 text-muted-foreground print:leading-6">
-            {project.highlights.map((highlight) => (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
+            {project.highlights.filter(Boolean).map((highlight) => (
               <li key={highlight}>{highlight}</li>
             ))}
           </ul>
@@ -257,10 +254,13 @@ function ProjectItem({ project }: { project: ResumeProject }) {
 }
 
 function TagList({ tags }: { tags: string[] }) {
+  const visibleTags = tags.filter((tag) => tag.trim());
+  if (!visibleTags.length) return null;
+
   return (
-    <div className="mt-3 flex flex-wrap gap-2 print:gap-1.5">
-      {tags.map((tag) => (
-        <Badge key={tag} variant="outline" className="print:border print:bg-transparent print:text-xs">
+    <div className="mt-3 flex flex-wrap gap-1.5">
+      {visibleTags.map((tag) => (
+        <Badge key={tag} variant="outline" className="rounded-md border-slate-200 font-medium text-slate-700 print:bg-transparent print:text-xs">
           {tag}
         </Badge>
       ))}
