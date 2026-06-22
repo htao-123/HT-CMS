@@ -573,6 +573,31 @@ export function AdminProfile() {
               </CardContent>
             </Card>
 
+            <section className="rounded-lg border bg-background px-4 py-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="shrink-0">
+                  <h3 className="text-sm font-semibold">模块顺序</h3>
+                  <p className="text-xs text-muted-foreground">控制预览和公开简历</p>
+                </div>
+                <div className="flex flex-wrap gap-2 lg:justify-end">
+                {normalizeSectionOrder(resumeForm.sectionOrder).map((section, index, order) => (
+                  <div key={section} className="flex items-center gap-1 rounded-md border bg-muted/30 px-2 py-1">
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded bg-background px-1 text-xs font-medium text-muted-foreground">{index + 1}</span>
+                    <span className="px-1 text-sm font-medium">{sectionLabels[section]}</span>
+                    <div className="flex items-center">
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(section, -1)} disabled={index === 0} title="上移">
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(section, 1)} disabled={index === order.length - 1} title="下移">
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                </div>
+              </div>
+            </section>
+
             <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
               <Card>
               <CardHeader><CardTitle>基础信息</CardTitle></CardHeader>
@@ -609,31 +634,6 @@ export function AdminProfile() {
               </CardContent>
               </Card>
             </div>
-
-            <section className="rounded-lg border bg-background px-4 py-3">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div className="shrink-0">
-                  <h3 className="text-sm font-semibold">模块顺序</h3>
-                  <p className="text-xs text-muted-foreground">控制预览和公开简历</p>
-                </div>
-                <div className="flex flex-wrap gap-2 lg:justify-end">
-                {normalizeSectionOrder(resumeForm.sectionOrder).map((section, index, order) => (
-                  <div key={section} className="flex items-center gap-1 rounded-md border bg-muted/30 px-2 py-1">
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded bg-background px-1 text-xs font-medium text-muted-foreground">{index + 1}</span>
-                    <span className="px-1 text-sm font-medium">{sectionLabels[section]}</span>
-                    <div className="flex items-center">
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(section, -1)} disabled={index === 0} title="上移">
-                        <ArrowUp className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(section, 1)} disabled={index === order.length - 1} title="下移">
-                        <ArrowDown className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                </div>
-              </div>
-            </section>
 
             <section className="space-y-4">
               <SectionHeader title="工作经历" action="添加经历" onAdd={addExperience} />
